@@ -1,0 +1,159 @@
+import React, { useState } from 'react';
+import { buildChallengeUrl, encodeToCode } from '../utils/wordCodec';
+import { copyToClipboard } from '../utils/shareResult';
+
+interface ShareLinkScreenProps {
+  word: string;
+  onToast: (msg: string) => void;
+  onBackToMenu: () => void;
+}
+
+export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
+  word,
+  onToast,
+  onBackToMenu,
+}) => {
+  const url = buildChallengeUrl(word);
+  const code = encodeToCode(word);
+  const [urlCopied, setUrlCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  const handleCopyUrl = async () => {
+    const ok = await copyToClipboard(url);
+    if (ok) {
+      onToast('Link copied!');
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    const ok = await copyToClipboard(code);
+    if (ok) {
+      onToast('Code copied!');
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Custom Wordle Challenge',
+          text: `Guess my Wordle! Code: ${code}`,
+          url,
+        });
+        return;
+      } catch {
+        // fall through to copy
+      }
+    }
+    handleCopyUrl();
+  };
+
+  return (
+    <main className="share-screen" role="main">
+      {/* Header */}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.15em',
+          color: 'var(--present)',
+          marginBottom: 8,
+        }}>
+          2-Player Mode
+        </div>
+        <h2 className="share-screen__title">Challenge Ready! 🎉</h2>
+        <p className="share-screen__subtitle">
+          Share the link or challenge code with Player 2. The word is hidden in the link — they won't be able to cheat!
+        </p>
+      </div>
+
+      {/* Challenge Link block */}
+      <div className="share-block">
+        <div className="share-block__label">Challenge Link</div>
+        <div className="share-block__url" aria-label="Challenge URL">
+          {url.length > 60 ? url.slice(0, 57) + '…' : url}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn btn--primary btn--sm"
+            onClick={handleCopyUrl}
+            id="copy-link-btn"
+            aria-label="Copy challenge link"
+            style={{ flex: 1 }}
+          >
+            {urlCopied ? '✓ Copied!' : '📋 Copy Link'}
+          </button>
+          <button
+            className="btn btn--secondary btn--sm"
+            onClick={handleShare}
+            id="share-link-btn"
+            aria-label="Share challenge"
+            style={{ flex: 1 }}
+          >
+            🔗 Share
+          </button>
+        </div>
+      </div>
+
+      {/* Challenge Code block */}
+      <div className="share-block">
+        <div className="share-block__label">Challenge Code</div>
+        <div
+          className="share-block__code"
+          aria-label={`Challenge code: ${code}`}
+          style={{ marginBottom: 12 }}
+        >
+          {code}
+        </div>
+        <button
+          className="btn btn--secondary btn--sm btn--full"
+          onClick={handleCopyCode}
+          id="copy-code-btn"
+          aria-label="Copy challenge code"
+        >
+          {codeCopied ? '✓ Copied!' : '📋 Copy Code'}
+        </button>
+        <p style={{
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)',
+          marginTop: 8,
+          lineHeight: 1.4,
+        }}>
+          Player 2 can enter this 8-character code on the home screen instead of using the link.
+        </p>
+      </div>
+
+      {/* Instructions */}
+      <div style={{
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--tile-border-empty)',
+        borderRadius: 8,
+        padding: '16px 20px',
+        width: '100%',
+        maxWidth: 360,
+        fontSize: '0.8125rem',
+        color: 'var(--text-muted)',
+        lineHeight: 1.5,
+      }}>
+        <strong style={{ color: 'var(--text)' }}>📱 Player 2 Instructions</strong><br/>
+        Open the link <em>or</em> go to the app and tap <em>"Enter Challenge Code"</em> on the home screen, then type the code above.
+      </div>
+
+      {/* Actions */}
+      <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <button
+          className="btn btn--outline btn--full"
+          onClick={onBackToMenu}
+          id="back-to-menu-share-btn"
+        >
+          ← Back to Menu
+        </button>
+      </div>
+    </main>
+  );
+};

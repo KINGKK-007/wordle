@@ -1,0 +1,74 @@
+/* ============================================================
+   CSS VARIABLES - NYT Wordle Dark Theme Color System
+   ============================================================ */
+:root {
+  /* Background */
+  --bg: #121213;
+  --bg-secondary: #1a1a1b;
+  
+  /* Text */
+  --text: #ffffff;
+  --text-muted: #818384;
+  
+  /* Tile colors */
+  --tile-border-empty: #3a3a3c;
+  --tile-border-filled: #565758;
+  --tile-bg-empty: transparent;
+  
+  /* Letter state colors */
+  --absent: #3a3a3c;
+  --present: #b59f3b;
+  --correct: #538d4e;
+  
+  /* High contrast state colors */
+  --hc-correct: #f5793a;
+  --hc-present: #85c0f9;
+  
+  /* Keyboard */
+  --key-bg: #818384;
+  --key-text: #ffffff;
+  --key-absent: #3a3a3c;
+  --key-present: #b59f3b;
+  --key-correct: #538d4e;
+  
+  /* UI */
+  --header-border: #3a3a3c;
+  --modal-bg: #121213;
+  --modal-overlay: rgba(0, 0, 0, 0.6);
+  --toast-bg: #ffffff;
+  --toast-text: #121213;
+  --input-border: #565758;
+  
+  /* Sizing */
+  --header-height: 58px;
+  --board-max-width: 350px;
+  --tile-size: 62px;
+  --tile-gap: 5px;
+  --key-height: 58px;
+  --keyboard-gap: 6px;
+  
+  /* Timing */
+  --flip-duration: 500ms;
+  --flip-stagger: 300ms;
+  --shake-duration: 600ms;
+  --pop-duration: 100ms;
+  --bounce-duration: 1000ms;
+  --toast-duration: 1500ms;
+  --modal-duration: 200ms;
+  
+  /* Typography */
+  --font-primary: 'Libre Franklin', 'Franklin Gothic Medium', 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-title: 'Playfair Display', 'Georgia', serif;
+  
+  /* Transitions */
+  --transition-fast: 0.1s ease;
+  --transition-std: 0.2s ease;
+}
+
+/* High contrast mode overrides */
+.high-contrast {
+  --correct: var(--hc-correct);
+  --present: var(--hc-present);
+  --key-correct: var(--hc-correct);
+  --key-present: var(--hc-present);
+}
