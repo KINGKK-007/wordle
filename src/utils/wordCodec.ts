@@ -1,22 +1,28 @@
 /**
- * Word Codec: Encodes/decodes a 5-letter word for URL sharing.
- * Uses XOR with a rotating salt + Base64 encoding.
- * The word is never readable in plain text in the URL.
+ * Word Codec: Encodes/decodes a 5-letter word for URL and code sharing.
+ *
+ * URL encoding  – XOR + Base64 (same as before, unchanged)
+ * Short code    – Word INDEX in the sorted valid-guess list, XOR'd with a
+ *                 salt, encoded as 4 base-32 characters.
+ *
+ *   Why index-based for the code?
+ *   There are ~14 854 valid words (≈14 bits).
+ *   4 × 5-bit base-32 chars = 20 bits → more than enough, gives 4 chars exactly.
  */
 
-const SALT = [0x4b, 0x77, 0x31, 0x5a, 0x39]; // "Kw1Z9" - salt bytes
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 chars, no ambiguous 0/O, 1/I
+import { VALID_GUESSES } from '../data/validGuesses';
 
-/**
- * Encodes a 5-letter word to a Base64 URL-safe string
- */
+// ── URL encoding: XOR + Base64 ──────────────────────────────────────────────
+
+const URL_SALT = [0x4b, 0x77, 0x31, 0x5a, 0x39]; // "Kw1Z9"
+
+/** Encodes a 5-letter word to a URL-safe Base64 string (never plaintext). */
 export function encodeWord(word: string): string {
   const lower = word.toLowerCase();
   const bytes = new Uint8Array(5);
   for (let i = 0; i < 5; i++) {
-    bytes[i] = lower.charCodeAt(i) ^ SALT[i % SALT.length];
+    bytes[i] = lower.charCodeAt(i) ^ URL_SALT[i % URL_SALT.length];
   }
-  // Convert to Base64
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -24,10 +30,7 @@ export function encodeWord(word: string): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
-/**
- * Decodes a Base64 URL-safe string back to a 5-letter word
- * Returns null if decoding fails or result is invalid
- */
+/** Decodes a URL-safe Base64 string back to a 5-letter word. Returns null on failure. */
 export function decodeWord(encoded: string): string | null {
   try {
     const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
@@ -35,7 +38,7 @@ export function decodeWord(encoded: string): string | null {
     if (binary.length !== 5) return null;
     let word = '';
     for (let i = 0; i < 5; i++) {
-      const charCode = (binary.charCodeAt(i) ^ SALT[i % SALT.length]);
+      const charCode = binary.charCodeAt(i) ^ URL_SALT[i % URL_SALT.length];
       if (charCode < 97 || charCode > 122) return null; // must be a-z
       word += String.fromCharCode(charCode);
     }
@@ -45,81 +48,80 @@ export function decodeWord(encoded: string): string | null {
   }
 }
 
+// ── 4-character challenge code: word index + XOR + base-32 ─────────────────
+
+/** 32 unambiguous characters (no 0/O, no 1/I) */
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+/** XOR salt for the word index (prevents trivial reverse-engineering). */
+const INDEX_SALT = 0x5A7E;
+
 /**
- * Encodes a 5-letter word to a short 7-character challenge code.
- * Uses base-32 encoding with the same XOR obfuscation.
+ * Lookup map: word → 0-based index in VALID_GUESSES.
+ * Built once at module load time; O(1) encode lookups.
+ */
+const WORD_TO_INDEX = new Map<string, number>(
+  VALID_GUESSES.map((w, i) => [w, i])
+);
+
+/**
+ * Encodes a 5-letter word to a 4-character challenge code.
+ *
+ * Algorithm:
+ *   1. Look up the word's index in the sorted VALID_GUESSES list.
+ *   2. XOR with INDEX_SALT to obfuscate.
+ *   3. Encode the resulting 20-bit number as 4 base-32 chars (5 bits each).
  */
 export function encodeToCode(word: string): string {
-  const lower = word.toLowerCase();
-  // XOR each char
-  const xored: number[] = [];
-  for (let i = 0; i < 5; i++) {
-    xored.push(lower.charCodeAt(i) ^ SALT[i % SALT.length]);
+  const idx = WORD_TO_INDEX.get(word.toLowerCase());
+  if (idx === undefined) {
+    // Word not in list – fall back to a recognisable placeholder
+    return '????';
   }
-  // Pack 5 bytes (5*8=40 bits) into 8 groups of 5 bits (base32)
-  // We only need 8 base-32 chars to encode 5 bytes (40 bits / 5 = 8)
-  let bits = 0n;
-  for (const b of xored) {
-    bits = (bits << 8n) | BigInt(b);
-  }
+  const obfuscated = (idx ^ INDEX_SALT) & 0xfffff; // keep within 20 bits
   let code = '';
-  for (let i = 0; i < 8; i++) {
-    const idx = Number(bits & 0x1fn);
-    code = CODE_CHARS[idx] + code;
-    bits >>= 5n;
+  let n = obfuscated;
+  for (let i = 0; i < 4; i++) {
+    code = CODE_CHARS[n & 0x1f] + code; // 5 LSBs → one base-32 char
+    n >>= 5;
   }
-  return code;
+  return code; // always exactly 4 chars
 }
 
 /**
- * Decodes a 7-8 character challenge code back to a word
- * Returns null if decoding fails
+ * Decodes a 4-character challenge code back to a word.
+ * Returns null if the code is invalid or out of range.
  */
 export function decodeFromCode(code: string): string | null {
   try {
     const upper = code.toUpperCase().trim();
-    if (upper.length !== 8) return null;
+    if (upper.length !== 4) return null;
 
-    // Decode base-32
-    let bits = 0n;
+    let n = 0;
     for (const ch of upper) {
-      const idx = CODE_CHARS.indexOf(ch);
-      if (idx === -1) return null;
-      bits = (bits << 5n) | BigInt(idx);
+      const charIdx = CODE_CHARS.indexOf(ch);
+      if (charIdx === -1) return null; // invalid character
+      n = (n << 5) | charIdx;
     }
 
-    // Extract 5 bytes
-    const bytes: number[] = [];
-    for (let i = 4; i >= 0; i--) {
-      bytes[i] = Number(bits & 0xffn);
-      bits >>= 8n;
-    }
-
-    // XOR to get original chars
-    let word = '';
-    for (let i = 0; i < 5; i++) {
-      const charCode = bytes[i] ^ SALT[i % SALT.length];
-      if (charCode < 97 || charCode > 122) return null;
-      word += String.fromCharCode(charCode);
-    }
-    return word;
+    const wordIdx = (n ^ INDEX_SALT) & 0xfffff;
+    if (wordIdx < 0 || wordIdx >= VALID_GUESSES.length) return null;
+    return VALID_GUESSES[wordIdx];
   } catch {
     return null;
   }
 }
 
-/**
- * Build a challenge URL with encoded word
- */
+// ── URL helpers ──────────────────────────────────────────────────────────────
+
+/** Builds a shareable challenge URL with the word encoded in the hash. */
 export function buildChallengeUrl(word: string): string {
   const encoded = encodeWord(word);
   const base = window.location.origin + window.location.pathname;
   return `${base}#/play?w=${encoded}`;
 }
 
-/**
- * Extract encoded word from current URL hash
- */
+/** Extracts and decodes a word from the current page URL hash. Returns null if absent. */
 export function getWordFromUrl(): string | null {
   const hash = window.location.hash;
   const match = hash.match(/[?&]w=([^&]+)/);

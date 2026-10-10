@@ -213,13 +213,10 @@ body {
   text-transform: uppercase;
   color: var(--text);
   border: 2px solid var(--tile-border-empty);
-  background: var(--tile-bg-empty);
-  position: relative;
-  perspective: 250px;
+  background: transparent;
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
-  transition: border-color 0.1s;
 }
 
 .tile__inner {
@@ -228,20 +225,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
 }
 
-/* Filled state (letter typed, not submitted) */
+/* Filled – letter typed but not yet submitted */
 .tile--filled {
   border-color: var(--tile-border-filled);
-}
-
-.tile--filled .tile__inner {
   animation: pop var(--pop-duration) ease;
 }
 
-/* Evaluated states - background on outer tile for flip reveal */
+/* ── Static evaluated states (shown AFTER flip completes) ─── */
 .tile--correct {
   background-color: var(--correct);
   border-color: var(--correct);
@@ -260,26 +252,10 @@ body {
   color: white;
 }
 
-/* Keep inner also colored for non-flip states */
-.tile--correct .tile__inner,
-.tile--present .tile__inner,
-.tile--absent .tile__inner {
-  background: inherit;
-}
-
-/* Flip animation */
-.tile--flip-in .tile__inner {
-  animation: flip-in calc(var(--flip-duration) / 2) ease forwards;
-}
-
-.tile--flip-out .tile__inner {
-  animation: flip-out calc(var(--flip-duration) / 2) ease forwards;
-}
-
-/* Win bounce */
-.tile--bounce .tile__inner {
-  animation: bounce var(--bounce-duration) ease;
-}
+/* ── CSS variables for the flip animation (set inline per tile) ─ */
+/* --tile-flip-color : target background (correct/present/absent value) */
+/* --flip-delay      : stagger offset in ms                           */
+/* The .tile--flipping class and its keyframes live in animations.css */
 
 /* ============================================================
    KEYBOARD

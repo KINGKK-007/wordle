@@ -3,8 +3,8 @@ import { Tile } from './Tile';
 import type { EvaluatedLetter, LetterState } from '../utils/evaluateGuess';
 
 interface RowProps {
-  letters: string[];       // 0-5 letters for the current guess
-  evaluated?: EvaluatedLetter[]; // evaluated results (if submitted)
+  letters: string[];
+  evaluated?: EvaluatedLetter[];
   isCurrentRow?: boolean;
   isShaking?: boolean;
   isFlipping?: boolean;
@@ -22,30 +22,35 @@ export const Row: React.FC<RowProps> = ({
   const tiles = Array(5).fill(null).map((_, i) => {
     let letter: string | undefined;
     let state: LetterState = 'empty';
-    let evaluatedState: LetterState | undefined;
+    let flipColor: 'correct' | 'present' | 'absent' | undefined;
 
     if (evaluated) {
       letter = evaluated[i]?.letter;
       const evalState = evaluated[i]?.state ?? 'empty';
 
       if (isFlipping) {
-        // During flip: show 'tbd' (filled tile style) before midpoint, evaluated color appears at midpoint
+        // Tile looks "filled" at the start of the flip; color appears at midpoint
         state = 'tbd';
-        evaluatedState = evalState;
+        // flipColor drives the CSS variable used by the animation keyframe
+        if (evalState === 'correct' || evalState === 'present' || evalState === 'absent') {
+          flipColor = evalState;
+        }
       } else {
+        // Flip is done — show the permanent evaluated colour
         state = evalState;
       }
     } else if (isCurrentRow && letters[i]) {
       letter = letters[i];
-      state = 'tbd'; // typed but not submitted
+      state = 'tbd';
     }
+    // else: empty row tile — state stays 'empty', no colour
 
     return (
       <Tile
         key={i}
         letter={letter}
         state={state}
-        evaluatedState={evaluatedState}
+        flipColor={flipColor}
         isFlipping={isFlipping && !!evaluated}
         flipDelay={i * 300}
         isBouncing={isBouncing && !!evaluated}

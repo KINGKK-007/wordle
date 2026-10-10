@@ -3,58 +3,71 @@ import type { LetterState } from '../utils/evaluateGuess';
 
 interface TileProps {
   letter?: string;
+  /** Visual state of the tile */
   state: LetterState;
-  evaluatedState?: LetterState; // the "final" state shown after flip midpoint
+  /** Only relevant when isFlipping=true: the target evaluated color */
+  flipColor?: 'correct' | 'present' | 'absent';
   isFlipping?: boolean;
   flipDelay?: number;
   isBouncing?: boolean;
   bounceDelay?: number;
 }
 
+// Maps evaluated LetterState to the CSS variable that holds the colour
+const FLIP_COLOR_VAR: Record<string, string> = {
+  correct: 'var(--correct)',
+  present: 'var(--present)',
+  absent:  'var(--absent)',
+};
+
 export const Tile: React.FC<TileProps> = ({
   letter,
   state,
-  evaluatedState,
+  flipColor,
   isFlipping = false,
   flipDelay = 0,
   isBouncing = false,
   bounceDelay = 0,
 }) => {
-  // During flip: outer tile shows the evaluated color so it's visible on flip-out.
-  // The inner content (flip animation) handles the rotation.
-  const displayState = isFlipping ? (evaluatedState ?? state) : state;
-
+  // During the flip animation we keep the tile looking "filled" (dark border,
+  // no colour background) at the start. The CSS animation swaps the colour at
+  // the midpoint (scaleY = 0) so it is never visible to the user.
+  // The static tile--correct/present/absent classes are ONLY applied once the
+  // flip is finished (isFlipping = false).
   const tileClass = [
     'tile',
-    displayState === 'tbd' && letter ? 'tile--filled' : '',
-    displayState === 'correct' ? 'tile--correct' : '',
-    displayState === 'present' ? 'tile--present' : '',
-    displayState === 'absent'  ? 'tile--absent'  : '',
+    // filled: typed letter awaiting submission OR mid-flip (starts as filled)
+    (state === 'tbd' && letter) || isFlipping ? 'tile--filled' : '',
+    // colour classes — never during flip
+    !isFlipping && state === 'correct' ? 'tile--correct' : '',
+    !isFlipping && state === 'present' ? 'tile--present' : '',
+    !isFlipping && state === 'absent'  ? 'tile--absent'  : '',
+    // flip animation hook
+    isFlipping ? 'tile--flipping' : '',
+    // win bounce
     isBouncing ? 'tile--bounce' : '',
   ].filter(Boolean).join(' ');
 
-  const innerStyle: React.CSSProperties = {};
+  const tileStyle: React.CSSProperties = {};
 
-  if (isFlipping) {
-    innerStyle.animationName = 'flip-in, flip-out';
-    innerStyle.animationDuration = '250ms, 250ms';
-    innerStyle.animationDelay = `${flipDelay}ms, ${flipDelay + 250}ms`;
-    innerStyle.animationFillMode = 'both, both';
-    innerStyle.animationTimingFunction = 'ease-in, ease-out';
+  if (isFlipping && flipColor) {
+    // These CSS custom properties are used by the tile-flip-color keyframe
+    (tileStyle as Record<string, string>)['--tile-flip-color'] = FLIP_COLOR_VAR[flipColor];
+    (tileStyle as Record<string, string>)['--flip-delay'] = `${flipDelay}ms`;
   }
 
   if (isBouncing) {
-    innerStyle.animationDelay = `${bounceDelay}ms`;
+    tileStyle.animationDelay = `${bounceDelay}ms`;
   }
 
   return (
     <div
       className={tileClass}
-      aria-label={letter ? `${letter} ${displayState}` : 'empty'}
-      data-state={displayState}
-      data-animation={isFlipping ? 'flip' : isBouncing ? 'bounce' : undefined}
+      style={tileStyle}
+      aria-label={letter ? `${letter.toUpperCase()} ${state}` : 'empty'}
+      data-state={state}
     >
-      <div className="tile__inner" style={innerStyle}>
+      <div className="tile__inner">
         {letter?.toUpperCase()}
       </div>
     </div>

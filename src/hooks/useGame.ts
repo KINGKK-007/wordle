@@ -7,8 +7,8 @@ export type GameStatus = 'playing' | 'evaluating' | 'won' | 'lost';
 
 export interface GameState {
   answer: string;
-  guesses: string[];       // completed guesses
-  currentGuess: string;    // current input (0-5 chars)
+  guesses: string[];
+  currentGuess: string;
   evaluatedRows: EvaluatedLetter[][];
   status: GameStatus;
   shakingRow: number | null;
@@ -34,13 +34,14 @@ interface UseGameOptions {
   onToast: (msg: string, duration?: number) => void;
   onWin: (guessCount: number, message: string) => void;
   onLose: (answer: string) => void;
-  persistKey?: string; // localStorage key for saving progress
+  persistKey?: string;
 }
 
 function buildLetterStates(rows: EvaluatedLetter[][]): Record<string, LetterState> {
   const states: Record<string, LetterState> = {};
-  const priority: Record<LetterState, number> = { correct: 3, present: 2, absent: 1, empty: 0, tbd: 0 };
-  
+  const priority: Record<LetterState, number> = {
+    correct: 3, present: 2, absent: 1, empty: 0, tbd: 0,
+  };
   for (const row of rows) {
     for (const { letter, state } of row) {
       if (!states[letter] || priority[state] > priority[states[letter]]) {
@@ -56,34 +57,28 @@ function getHardModeError(
   evaluatedRows: EvaluatedLetter[][]
 ): string | null {
   if (evaluatedRows.length === 0) return null;
-  
-  // Check all confirmed positions (green)
+  const positions = ['1st', '2nd', '3rd', '4th', '5th'];
+
   for (const row of evaluatedRows) {
     for (let i = 0; i < row.length; i++) {
-      if (row[i].state === 'correct') {
-        if (guess[i] !== row[i].letter) {
-          const positions = ['1st', '2nd', '3rd', '4th', '5th'];
-          return `${positions[i]} letter must be ${row[i].letter.toUpperCase()}`;
-        }
+      if (row[i].state === 'correct' && guess[i] !== row[i].letter) {
+        return `${positions[i]} letter must be ${row[i].letter.toUpperCase()}`;
       }
     }
   }
-  
-  // Check all present letters (yellow) - must be used somewhere
+
   const presentLetters: Record<string, boolean> = {};
   for (const row of evaluatedRows) {
     for (const { letter, state } of row) {
-      if (state === 'present') presentLetters[letter] = true;
-      if (state === 'correct') presentLetters[letter] = true;
+      if (state === 'present' || state === 'correct') presentLetters[letter] = true;
     }
   }
-  
   for (const letter of Object.keys(presentLetters)) {
     if (!guess.includes(letter)) {
       return `Guess must contain ${letter.toUpperCase()}`;
     }
   }
-  
+
   return null;
 }
 
@@ -96,7 +91,7 @@ export function useGame({
   onLose,
   persistKey,
 }: UseGameOptions): UseGameReturn {
-  const [state, setState] = useState<GameState>({
+  const initialState: GameState = {
     answer,
     guesses: [],
     currentGuess: '',
@@ -107,44 +102,49 @@ export function useGame({
     bouncingRow: null,
     activeLetterStates: {},
     mode,
-  });
+  };
 
-  // Load persisted state on mount (only for unlimited mode)
+  const [state, setState] = useState<GameState>(initialState);
+
+  // Keep a ref to current state so handleKey can read it without stale closures
+  // and WITHOUT triggering side effects inside setState updaters (StrictMode safe)
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  // ── Persist in-progress game (Unlimited mode only) ──────────────────────
+
   useEffect(() => {
     if (!persistKey) return;
     try {
       const saved = localStorage.getItem(persistKey);
       if (!saved) return;
       const parsed = JSON.parse(saved) as Partial<GameState>;
-      // Only restore if the answer matches
       if (parsed.answer !== answer) {
         localStorage.removeItem(persistKey);
         return;
       }
       if (parsed.status && parsed.status !== 'playing' && parsed.status !== 'evaluating') {
-        // Game was already over, start fresh
-        return;
+        return; // game already over, start fresh
       }
       setState(prev => ({
         ...prev,
         guesses: parsed.guesses ?? [],
         currentGuess: parsed.currentGuess ?? '',
         evaluatedRows: parsed.evaluatedRows ?? [],
-        status: parsed.status ?? 'playing',
+        status: 'playing', // always resume as playing
         activeLetterStates: buildLetterStates(parsed.evaluatedRows ?? []),
       }));
     } catch {
-      // ignore
+      // ignore corrupt data
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist state on changes
-  const persistTimeout = useRef<number | null>(null);
+  const persistTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!persistKey) return;
     if (persistTimeout.current) clearTimeout(persistTimeout.current);
-    persistTimeout.current = window.setTimeout(() => {
+    persistTimeout.current = setTimeout(() => {
       try {
         localStorage.setItem(persistKey, JSON.stringify({
           answer: state.answer,
@@ -153,149 +153,145 @@ export function useGame({
           evaluatedRows: state.evaluatedRows,
           status: state.status,
         }));
-      } catch {
-        // ignore
-      }
+      } catch { /* ignore */ }
     }, 200);
   }, [state, persistKey]);
 
-  const shakeRowRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── Row shake ────────────────────────────────────────────────────────────
 
-  const shakeCurrentRow = useCallback((rowIndex: number) => {
+  const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const shakeRow = useCallback((rowIndex: number) => {
     setState(prev => ({ ...prev, shakingRow: rowIndex }));
-    if (shakeRowRef.current) clearTimeout(shakeRowRef.current);
-    shakeRowRef.current = setTimeout(() => {
+    if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+    shakeTimerRef.current = setTimeout(() => {
       setState(prev => ({ ...prev, shakingRow: null }));
     }, 650);
   }, []);
 
-  const handleKey = useCallback((key: string) => {
-    setState(prev => {
-      if (prev.status !== 'playing') return prev;
-      
-      if (key === 'Backspace') {
-        return { ...prev, currentGuess: prev.currentGuess.slice(0, -1) };
-      }
-      
-      if (key === 'Enter') {
-        // Process submit synchronously (side effects after)
-        return prev; // handled below to avoid stale closure
-      }
-      
-      // Letter key
-      if (/^[A-Z]$/.test(key) && prev.currentGuess.length < 5) {
-        return { ...prev, currentGuess: prev.currentGuess + key.toLowerCase() };
-      }
-      
-      return prev;
-    });
+  // ── handleKey ────────────────────────────────────────────────────────────
+  // IMPORTANT: All side-effects (setTimeout, toast, etc.) run here in the
+  // callback body — NOT inside setState updater functions — so React StrictMode's
+  // double-invocation of updaters never causes duplicate toasts / timers.
 
-    if (key === 'Enter') {
-      setState(prev => {
-        if (prev.status !== 'playing') return prev;
-        
-        const guess = prev.currentGuess;
-        
-        // Validation
-        if (guess.length < 5) {
-          setTimeout(() => {
-            onToast('Not enough letters');
-            shakeCurrentRow(prev.guesses.length);
-          }, 0);
-          return prev;
-        }
-        
-        if (!VALID_GUESS_SET.has(guess)) {
-          setTimeout(() => {
-            onToast('Not in word list');
-            shakeCurrentRow(prev.guesses.length);
-          }, 0);
-          return prev;
-        }
-        
-        // Hard mode check
-        if (hardMode) {
-          const error = getHardModeError(guess, prev.evaluatedRows);
-          if (error) {
-            setTimeout(() => {
-              onToast(error);
-              shakeCurrentRow(prev.guesses.length);
-            }, 0);
-            return prev;
-          }
-        }
-        
-        // Start flip animation
-        const rowIndex = prev.guesses.length;
-        const evaluated = evaluateGuess(guess, prev.answer);
-        const newGuesses = [...prev.guesses, guess];
-        const newEvaluatedRows = [...prev.evaluatedRows, evaluated];
-        const isWin = evaluated.every(e => e.state === 'correct');
-        const isLoss = !isWin && newGuesses.length >= 6;
-        
-        // Begin flip animation
-        const newState: GameState = {
-          ...prev,
-          guesses: newGuesses,
-          currentGuess: '',
-          evaluatedRows: newEvaluatedRows,
-          status: 'evaluating',
-          flippingRow: rowIndex,
-        };
-        
-        // After all tiles flip (5 tiles * 300ms stagger + 500ms flip = ~2000ms total)
-        const flipTotal = 5 * 300 + 500; // last tile starts at 1200ms + 500ms = 1700ms
-        
-        setTimeout(() => {
-          // Update keyboard colors
-          const newLetterStates = buildLetterStates(newEvaluatedRows);
-          
-          if (isWin) {
-            // Bounce winning row
-            setState(s => ({
-              ...s,
-              status: 'won',
-              flippingRow: null,
-              bouncingRow: rowIndex,
-              activeLetterStates: newLetterStates,
-            }));
-            const msg = WIN_MESSAGES[rowIndex] || 'Genius';
-            setTimeout(() => onToast(msg, 2000), 0);
-            setTimeout(() => {
-              setState(s => ({ ...s, bouncingRow: null }));
-              onWin(newGuesses.length, msg);
-            }, 1200);
-            if (mode !== '2player') {
-              recordWin(mode, newGuesses.length);
-            }
-          } else if (isLoss) {
-            setState(s => ({
-              ...s,
-              status: 'lost',
-              flippingRow: null,
-              activeLetterStates: newLetterStates,
-            }));
-            setTimeout(() => {
-              onLose(prev.answer);
-              onToast(prev.answer.toUpperCase(), 3000);
-            }, 0);
-            if (mode !== '2player') {
-              recordLoss(mode);
-            }
-          } else {
-            setState(s => ({
-              ...s,
-              status: 'playing',
-              flippingRow: null,
-              activeLetterStates: newLetterStates,
-            }));
-          }
-        }, flipTotal);
-        
-        return newState;
-      });
+  const handleKey = useCallback((key: string) => {
+    const current = stateRef.current;
+
+    if (current.status !== 'playing') return;
+
+    // ── Backspace ────────────────────────────────────────────────────────
+    if (key === 'Backspace') {
+      setState(prev => ({ ...prev, currentGuess: prev.currentGuess.slice(0, -1) }));
+      return;
     }
-  }, [hardMode, shakeCurrentRow, onToast, onWin, onLose, mode]);
+
+    // ── Letter ───────────────────────────────────────────────────────────
+    if (/^[A-Z]$/.test(key)) {
+      if (current.currentGuess.length < 5) {
+        setState(prev => ({
+          ...prev,
+          currentGuess: prev.currentGuess + key.toLowerCase(),
+        }));
+      }
+      return;
+    }
+
+    // ── Enter ────────────────────────────────────────────────────────────
+    if (key === 'Enter') {
+      const guess = current.currentGuess;
+      const rowIndex = current.guesses.length;
+
+      if (guess.length < 5) {
+        onToast('Not enough letters');
+        shakeRow(rowIndex);
+        return;
+      }
+
+      if (!VALID_GUESS_SET.has(guess)) {
+        onToast('Not in word list');
+        shakeRow(rowIndex);
+        return;
+      }
+
+      if (hardMode) {
+        const error = getHardModeError(guess, current.evaluatedRows);
+        if (error) {
+          onToast(error);
+          shakeRow(rowIndex);
+          return;
+        }
+      }
+
+      // ── Valid guess: evaluate and start flip animation ──────────────────
+
+      const evaluated = evaluateGuess(guess, current.answer);
+      const newGuesses = [...current.guesses, guess];
+      const newEvaluatedRows = [...current.evaluatedRows, evaluated];
+      const isWin = evaluated.every(e => e.state === 'correct');
+      const isLoss = !isWin && newGuesses.length >= 6;
+
+      // Transition to 'evaluating' (locks input) and start flip
+      setState(prev => ({
+        ...prev,
+        guesses: newGuesses,
+        currentGuess: '',
+        evaluatedRows: newEvaluatedRows,
+        status: 'evaluating',
+        flippingRow: rowIndex,
+      }));
+
+      // Total time until all tiles have flipped:
+      // tile i starts at i*300ms, each flip takes 500ms → last tile done at 4*300 + 500 = 1700ms
+      const flipTotal = (5 - 1) * 300 + 500;
+
+      setTimeout(() => {
+        const newLetterStates = buildLetterStates(newEvaluatedRows);
+
+        if (isWin) {
+          setState(s => ({
+            ...s,
+            status: 'won',
+            flippingRow: null,
+            bouncingRow: rowIndex,
+            activeLetterStates: newLetterStates,
+          }));
+
+          const msg = WIN_MESSAGES[rowIndex] ?? 'Genius';
+          onToast(msg, 2000); // ← called once, here in the timeout, not in setState
+
+          setTimeout(() => {
+            setState(s => ({ ...s, bouncingRow: null }));
+            onWin(newGuesses.length, msg);
+          }, 1200);
+
+          if (mode !== '2player') {
+            recordWin(mode, newGuesses.length);
+          }
+        } else if (isLoss) {
+          setState(s => ({
+            ...s,
+            status: 'lost',
+            flippingRow: null,
+            activeLetterStates: newLetterStates,
+          }));
+          onToast(current.answer.toUpperCase(), 3000);
+          onLose(current.answer);
+          if (mode !== '2player') {
+            recordLoss(mode);
+          }
+        } else {
+          setState(s => ({
+            ...s,
+            status: 'playing',
+            flippingRow: null,
+            activeLetterStates: newLetterStates,
+          }));
+        }
+      }, flipTotal);
+    }
+  }, [hardMode, shakeRow, onToast, onWin, onLose, mode]);
+
+  // ── Reset ────────────────────────────────────────────────────────────────
 
   const resetGame = useCallback((newAnswer: string) => {
     setState({
@@ -310,12 +306,13 @@ export function useGame({
       activeLetterStates: {},
       mode,
     });
-    if (persistKey) {
-      localStorage.removeItem(persistKey);
-    }
+    if (persistKey) localStorage.removeItem(persistKey);
   }, [mode, persistKey]);
 
-  const isInputDisabled = state.status === 'evaluating' || state.status === 'won' || state.status === 'lost';
+  const isInputDisabled =
+    state.status === 'evaluating' ||
+    state.status === 'won' ||
+    state.status === 'lost';
 
   return { state, handleKey, resetGame, isInputDisabled };
 }

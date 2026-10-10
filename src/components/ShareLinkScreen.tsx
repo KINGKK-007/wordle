@@ -124,7 +124,7 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
           marginTop: 8,
           lineHeight: 1.4,
         }}>
-          Player 2 can enter this 8-character code on the home screen instead of using the link.
+        Player 2 can enter this 4-character code on the home screen instead of using the link.
         </p>
       </div>
 

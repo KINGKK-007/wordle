@@ -18,8 +18,8 @@ export const CodeInputScreen: React.FC<CodeInputScreenProps> = ({
 
   const handleSubmit = () => {
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length !== 8) {
-      setError('Challenge codes are 8 characters long');
+    if (trimmed.length !== 4) {
+      setError('Challenge codes are 4 characters long');
       return;
     }
     const word = decodeFromCode(trimmed);
@@ -64,12 +64,12 @@ export const CodeInputScreen: React.FC<CodeInputScreenProps> = ({
         className="code-input"
         value={code}
         onChange={e => {
-          setCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8));
+          setCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 4));
           setError('');
         }}
         onKeyDown={handleKeyDown}
-        maxLength={8}
-        placeholder="XXXXXXXX"
+        maxLength={4}
+        placeholder="XXXX"
         autoCapitalize="characters"
         autoCorrect="off"
         autoComplete="off"
@@ -95,7 +95,7 @@ export const CodeInputScreen: React.FC<CodeInputScreenProps> = ({
         <button
           className="btn btn--primary btn--full"
           onClick={handleSubmit}
-          disabled={code.length < 8}
+          disabled={code.length < 4}
           id="submit-code-btn"
         >
           Start Game →

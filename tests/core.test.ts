@@ -108,7 +108,7 @@ test('encodeToCode / decodeFromCode roundtrip', () => {
   const words = ['crane', 'abbey', 'world', 'query', 'fuzzy', 'prize'];
   for (const word of words) {
     const code = encodeToCode(word);
-    if (code.length !== 8) throw new Error(`Code length should be 8, got ${code.length} for '${word}'`);
+    if (code.length !== 4) throw new Error(`Code length should be 4, got ${code.length} for '${word}'`);
     const decoded = decodeFromCode(code);
     if (decoded !== word) throw new Error(`${word} -> code ${code} -> decoded ${decoded}`);
     // Check code doesn't contain plaintext
@@ -123,8 +123,9 @@ test('decodeWord returns null for invalid input', () => {
 });
 
 test('decodeFromCode returns null for invalid input', () => {
-  expect(decodeFromCode('AAAAAAA'), null); // 7 chars, not 8
-  expect(decodeFromCode('--------'), null); // invalid chars
+  expect(decodeFromCode('AAA'), null);   // 3 chars, not 4
+  expect(decodeFromCode('----'), null);  // invalid chars
+  expect(decodeFromCode(''), null);      // empty
 });
 
 // ─── getBestLetterState tests ──────────────────────────────────────────────────
