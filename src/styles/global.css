@@ -217,6 +217,8 @@ body {
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
+  /* perspective is set inside the keyframe transform function (perspective(250px) rotateX)
+     so it doesn't need to be a CSS property here — that would double the effect. */
 }
 
 .tile__inner {
@@ -225,6 +227,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Ensures the inner element renders correctly inside the 3-D context */
+  backface-visibility: hidden;
 }
 
 /* Filled – letter typed but not yet submitted */
@@ -253,9 +257,9 @@ body {
 }
 
 /* ── CSS variables for the flip animation (set inline per tile) ─ */
-/* --tile-flip-color : target background (correct/present/absent value) */
-/* --flip-delay      : stagger offset in ms                           */
-/* The .tile--flipping class and its keyframes live in animations.css */
+/* --tile-flip-color : target background (e.g. var(--correct))     */
+/* --flip-delay      : per-tile stagger offset in ms               */
+/* The .tile--flipping class and keyframes live in animations.css  */
 
 /* ============================================================
    KEYBOARD

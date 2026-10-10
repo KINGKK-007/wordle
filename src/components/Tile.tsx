@@ -5,15 +5,16 @@ interface TileProps {
   letter?: string;
   /** Visual state of the tile */
   state: LetterState;
-  /** Only relevant when isFlipping=true: the target evaluated color */
+  /** Only relevant when isFlipping=true: the evaluated colour to reveal */
   flipColor?: 'correct' | 'present' | 'absent';
   isFlipping?: boolean;
+  /** Per-tile stagger in ms (0, 300, 600, 900, 1200) */
   flipDelay?: number;
   isBouncing?: boolean;
   bounceDelay?: number;
 }
 
-// Maps evaluated LetterState to the CSS variable that holds the colour
+// Maps evaluated LetterState → the CSS variable that holds that colour
 const FLIP_COLOR_VAR: Record<string, string> = {
   correct: 'var(--correct)',
   present: 'var(--present)',
@@ -29,34 +30,38 @@ export const Tile: React.FC<TileProps> = ({
   isBouncing = false,
   bounceDelay = 0,
 }) => {
-  // During the flip animation we keep the tile looking "filled" (dark border,
-  // no colour background) at the start. The CSS animation swaps the colour at
-  // the midpoint (scaleY = 0) so it is never visible to the user.
-  // The static tile--correct/present/absent classes are ONLY applied once the
-  // flip is finished (isFlipping = false).
   const tileClass = [
     'tile',
-    // filled: typed letter awaiting submission OR mid-flip (starts as filled)
-    (state === 'tbd' && letter) || isFlipping ? 'tile--filled' : '',
-    // colour classes — never during flip
+
+    // "filled" border only when a letter is typed and NOT currently flipping
+    // (during flip the animation handles its own border styling)
+    state === 'tbd' && letter && !isFlipping ? 'tile--filled' : '',
+
+    // Static evaluated colour classes – ONLY after flip completes
     !isFlipping && state === 'correct' ? 'tile--correct' : '',
     !isFlipping && state === 'present' ? 'tile--present' : '',
     !isFlipping && state === 'absent'  ? 'tile--absent'  : '',
-    // flip animation hook
+
+    // Flip animation applied via animations.css (.tile--flipping)
     isFlipping ? 'tile--flipping' : '',
-    // win bounce
+
+    // Win-bounce
     isBouncing ? 'tile--bounce' : '',
   ].filter(Boolean).join(' ');
 
+  // Build inline style — CSS custom properties used by keyframe animations
   const tileStyle: React.CSSProperties = {};
 
-  if (isFlipping && flipColor) {
-    // These CSS custom properties are used by the tile-flip-color keyframe
-    (tileStyle as Record<string, string>)['--tile-flip-color'] = FLIP_COLOR_VAR[flipColor];
+  if (isFlipping) {
+    // --tile-flip-color : resolved colour value used by flip-tile-color keyframe
+    // --flip-delay      : per-tile stagger so tiles flip one by one
+    (tileStyle as Record<string, string>)['--tile-flip-color'] =
+      flipColor ? FLIP_COLOR_VAR[flipColor] : 'var(--absent)';
     (tileStyle as Record<string, string>)['--flip-delay'] = `${flipDelay}ms`;
   }
 
   if (isBouncing) {
+    // The bounce animation in animations.css reads animationDelay
     tileStyle.animationDelay = `${bounceDelay}ms`;
   }
 
