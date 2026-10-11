@@ -1,0 +1,49 @@
+.stats-mode-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--header-border);
+  margin-bottom: 20px;
+}
+.stats-mode-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.stats-mode-tabs button[aria-selected='true'] {
+  border-bottom-color: var(--correct);
+  color: var(--text);
+}
+.stats-mode-tabs button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+.duel-stats-numbers {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.duel-stats-numbers .stat-item__value {
+  font-size: 1.7rem;
+}
+.duel-stats-best {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+}
+.duel-stats-best > div {
+  display: flex;
+  flex-direction: column;
+}
+.duel-stats-best strong {
+  font-size: 1.7rem;
+}
+.duel-stats-best span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}

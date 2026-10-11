@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import './styles/global.css';
 import { Header } from './components/Header';
 import { HomeScreen } from './components/HomeScreen';
@@ -18,8 +18,9 @@ import { loadStats } from './utils/stats';
 import { loadSavedGame, SOLO_GAME_STORAGE_KEY } from './utils/gamePersistence';
 import { readStorage, writeStorage, removeStorage } from './utils/storage';
 
-type Screen = 'home' | 'unlimited' | 'set-word' | 'share-link' | 'enter-code' | 'two-player-game' | 'error';
-interface Route { screen: Screen; word?: string }
+const DuelScreen = lazy(() => import('./duel/DuelScreen'));
+type Screen = 'home' | 'unlimited' | 'set-word' | 'share-link' | 'enter-code' | 'two-player-game' | 'duel' | 'error';
+interface Route { screen: Screen; word?: string; code?: string }
 interface Settings { hardMode: boolean; highContrast: boolean }
 const HELP_SHOWN_KEY = 'custom-wordle-help-shown';
 const LAST_ANSWER_KEY = 'custom-wordle-last-answer';
@@ -27,21 +28,22 @@ const LAST_ANSWER_KEY = 'custom-wordle-last-answer';
 function readRoute(): Route {
   const hash = window.location.hash;
   if (hash.startsWith('#/play')) {
-    const payload = new URLSearchParams(hash.split('?')[1] ?? '').get('w');
-    const word = payload ? decodeWord(payload) : null;
+    const params = new URLSearchParams(hash.split('?')[1] ?? '');
+    const payload = params.get('w');
+    const word = hash.startsWith('#/play?') && params.getAll('w').length === 1 && payload ? decodeWord(payload) : null;
     return word ? { screen: 'two-player-game', word } : { screen: 'error' };
   }
+  if (hash === '#/duel' || hash.startsWith('#/duel/')) return { screen: 'duel', code: hash.slice(7).toUpperCase() || undefined };
   if (hash === '#/unlimited') return { screen: 'unlimited' };
   if (hash === '#/set') return { screen: 'set-word' };
   if (hash === '#/code') return { screen: 'enter-code' };
   return { screen: 'home' };
 }
 
-function pickAnswer(): string {
-  const previous = readStorage(LAST_ANSWER_KEY);
+function pickAnswer(exclude = readStorage(LAST_ANSWER_KEY)): string {
+  const previous = exclude;
   const pool = ANSWER_LIST.filter(word => word !== previous);
   const word = pool[Math.floor(Math.random() * pool.length)]!;
-  writeStorage(LAST_ANSWER_KEY, word);
   return word;
 }
 
@@ -62,6 +64,7 @@ export default function App() {
   const [globalModal, setGlobalModal] = useState<'stats' | 'settings' | null>(null);
   const [gameKey, setGameKey] = useState(0);
   const isGame = route.screen === 'unlimited' || route.screen === 'two-player-game';
+  const isDuel = route.screen === 'duel';
 
   useEffect(() => {
     const onHashChange = () => {
@@ -76,6 +79,7 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   useEffect(() => { if (showHelp) writeStorage(HELP_SHOWN_KEY, '1'); }, [showHelp]);
+  useEffect(() => { if (currentAnswer) writeStorage(LAST_ANSWER_KEY, currentAnswer); }, [currentAnswer]);
   useEffect(() => { document.getElementById('root')?.classList.toggle('high-contrast', settings.highContrast); }, [settings.highContrast]);
 
   const toggleSetting = useCallback((key: keyof Settings) => setSettings(previous => ({ ...previous, [key]: !previous[key] })), [setSettings]);
@@ -84,18 +88,19 @@ export default function App() {
   const navigate = (hash: string) => { window.location.hash = hash; };
   const playAgain = () => {
     removeStorage(SOLO_GAME_STORAGE_KEY);
-    setCurrentAnswer(pickAnswer());
+    setCurrentAnswer(pickAnswer(currentAnswer));
     setGameKey(key => key + 1);
   };
-  const subtitle = route.screen === 'unlimited' ? 'Unlimited' : ['set-word', 'share-link', 'two-player-game'].includes(route.screen) ? '2-Player' : undefined;
+  const subtitle = isDuel ? 'Duel' : route.screen === 'unlimited' ? 'Unlimited' : ['set-word', 'share-link', 'two-player-game'].includes(route.screen) ? '2-Player' : undefined;
 
   return <div className="app">
-    <Header onMenu={goHome} subtitle={subtitle}
-      onHelp={() => isGame ? dispatch('help') : setShowHelp(true)}
-      onStats={() => isGame ? dispatch('stats') : setGlobalModal('stats')}
-      onSettings={() => isGame ? dispatch('settings') : setGlobalModal('settings')} />
+    <Header onMenu={() => isDuel ? dispatch('menu') : goHome()} subtitle={subtitle}
+      onHelp={() => isGame || isDuel ? dispatch('help') : setShowHelp(true)}
+      onStats={() => isGame || isDuel ? dispatch('stats') : setGlobalModal('stats')}
+      onSettings={() => isGame || isDuel ? dispatch('settings') : setGlobalModal('settings')} />
     <ToastContainer toasts={toasts} />
-    {route.screen === 'home' && <HomeScreen onUnlimited={() => navigate('#/unlimited')} onTwoPlayer={() => navigate('#/set')} onEnterCode={() => navigate('#/code')} />}
+    {route.screen === 'home' && <HomeScreen onUnlimited={() => navigate('#/unlimited')} onTwoPlayer={() => navigate('#/set')} onEnterCode={() => navigate('#/code')} onDuel={() => navigate('#/duel')} />}
+    {isDuel && <Suspense fallback={<main className="error-screen" role="status">Loading Duel…</main>}><DuelScreen code={route.code} settings={settings} onSettingsChange={toggleSetting} onToast={showToast} onBackToMenu={goHome} /></Suspense>}
     {route.screen === 'unlimited' && currentAnswer && <GameScreen key={`unlimited-${gameKey}`} answer={currentAnswer} mode="unlimited" settings={settings} onSettingsChange={toggleSetting} onToast={showToast} onPlayAgain={playAgain} onBackToMenu={goHome} />}
     {route.screen === 'set-word' && <SetWordScreen onWordSet={word => { setTwoPlayerWord(word); setRoute({ screen: 'share-link' }); }} onToast={showToast} />}
     {route.screen === 'share-link' && twoPlayerWord && <ShareLinkScreen word={twoPlayerWord} onToast={showToast} onBackToMenu={goHome} />}

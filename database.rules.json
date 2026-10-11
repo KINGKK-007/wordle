@@ -1,0 +1,186 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('meta/hostUid').val() == auth.uid && $code.matches(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{5}$/)) || (!newData.exists() && data.child('meta/hostUid').val() == auth.uid && (data.child('meta/status').val() == 'lobby' || (data.child('meta/status').val() == 'countdown' && now < data.child('meta/startAt').val()) || data.child('meta/status').val() == 'finished' || (data.child('meta/endAt').exists() && now >= data.child('meta/endAt').val()))))",
+        ".validate": "newData.hasChildren(['meta', 'players'])",
+        "meta": {
+          ".validate": "(newData.hasChildren(['hostUid', 'createdAt', 'durationSec', 'seed', 'status']) && ((!data.exists() && newData.child('status').val() == 'lobby' && (!newData.child('startAt').exists() && !newData.child('endAt').exists() && !newData.child('forfeitUid').exists())) || (data.exists() && ((newData.child('status').val() == data.child('status').val() && (((newData.child('seed').val() == data.child('seed').val() && newData.child('durationSec').val() == data.child('durationSec').val() && newData.child('startAt').val() == data.child('startAt').val() && newData.child('endAt').val() == data.child('endAt').val()) && newData.child('forfeitUid').val() == data.child('forfeitUid').val() && newData.child('forfeitAt').val() == data.child('forfeitAt').val()) || (data.child('status').val() == 'lobby' && (!newData.child('startAt').exists() && !newData.child('endAt').exists() && !newData.child('forfeitUid').exists())))) || ((data.child('status').val() == 'lobby' && newData.child('status').val() == 'countdown') && (root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('ready').val() == true && root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('connected').val() == true && root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('readySeed').val() == data.child('seed').val() && root.child('rooms').child($code).child('players').child(data.child('guestUid').val()).child('ready').val() == true && root.child('rooms').child($code).child('players').child(data.child('guestUid').val()).child('connected').val() == true && root.child('rooms').child($code).child('players').child(data.child('guestUid').val()).child('readySeed').val() == data.child('seed').val()) && newData.child('seed').val() == data.child('seed').val() && newData.child('durationSec').val() == data.child('durationSec').val() && newData.child('startAt').val() >= now + 3500 && newData.child('startAt').val() <= now + 6500 && newData.child('endAt').val() == newData.child('startAt').val() + newData.child('durationSec').val() * 1000 && !newData.child('forfeitUid').exists()) || ((data.child('status').val() == 'countdown' && newData.child('status').val() == 'lobby') && now < data.child('startAt').val() && !(root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('ready').val() == true && root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('connected').val() == true && root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('readySeed').val() == data.child('seed').val() && root.child('rooms').child($code).child('players').child(data.child('guestUid').val()).child('ready').val() == true && root.child('rooms').child($code).child('players').child(data.child('guestUid').val()).child('connected').val() == true && root.child('rooms').child($code).child('players').child(data.child('guestUid').val()).child('readySeed').val() == data.child('seed').val()) && (!newData.child('startAt').exists() && !newData.child('endAt').exists() && !newData.child('forfeitUid').exists()) && newData.child('seed').val() == data.child('seed').val() && newData.child('durationSec').val() == data.child('durationSec').val()) || ((data.child('status').val() == 'countdown' && newData.child('status').val() == 'playing') && now >= data.child('startAt').val() && (newData.child('seed').val() == data.child('seed').val() && newData.child('durationSec').val() == data.child('durationSec').val() && newData.child('startAt').val() == data.child('startAt').val() && newData.child('endAt').val() == data.child('endAt').val()) && !newData.child('forfeitUid').exists()) || (((data.child('status').val() == 'countdown' && newData.child('status').val() == 'finished') || (data.child('status').val() == 'playing' && newData.child('status').val() == 'finished')) && (now >= data.child('endAt').val() || newData.child('forfeitUid').exists()) && (newData.child('seed').val() == data.child('seed').val() && newData.child('durationSec').val() == data.child('durationSec').val() && newData.child('startAt').val() == data.child('startAt').val() && newData.child('endAt').val() == data.child('endAt').val())) || ((data.child('status').val() == 'finished' && newData.child('status').val() == 'lobby') && root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('rematchSeed').val() == data.child('seed').val() && root.child('rooms').child($code).child('players').child(data.child('guestUid').val()).child('rematchSeed').val() == data.child('seed').val() && newData.child('seed').val() != data.child('seed').val() && newData.child('durationSec').val() == data.child('durationSec').val() && (!newData.child('startAt').exists() && !newData.child('endAt').exists() && !newData.child('forfeitUid').exists())))))) && (newData.child('forfeitUid').exists() == newData.child('forfeitAt').exists()) && (newData.child('guestUid').val() == data.child('guestUid').val() || (!data.child('guestUid').exists() && newData.child('guestUid').val() == auth.uid) || (!newData.child('guestUid').exists() && data.child('guestUid').val() == auth.uid && (data.child('status').val() == 'lobby' || (data.child('status').val() == 'countdown' && now < data.child('startAt').val()) || !root.child('rooms').child($code).child('players').child(auth.uid).exists())))",
+          "hostUid": {
+            ".validate": "newData.isString() && newData.val().length <= 128 && ((!data.exists() && newData.val() == auth.uid) || newData.val() == data.val())"
+          },
+          "guestUid": {
+            ".write": "auth != null && ((!data.exists() && newData.val() == auth.uid && root.child('rooms').child($code).child('meta').child('status').val() == 'lobby' && now - root.child('rooms').child($code).child('meta').child('createdAt').val() < 21600000) || (data.val() == auth.uid && !newData.exists() && (root.child('rooms').child($code).child('meta').child('status').val() == 'lobby' || root.child('rooms').child($code).child('meta').child('status').val() == 'countdown' || !root.child('rooms').child($code).child('players').child(auth.uid).exists())))",
+            ".validate": "newData.isString() && newData.val().length <= 128 && newData.val() != newData.parent().child('hostUid').val() && (newData.val() == data.val() || (!data.exists() && newData.val() == auth.uid))"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && ((!data.exists() && newData.val() <= now + 5000 && newData.val() >= now - 60000) || newData.val() == data.val())"
+          },
+          "durationSec": {
+            ".validate": "(newData.val() == 60 || newData.val() == 120 || newData.val() == 300) && (!data.exists() || newData.val() == data.val() || data.parent().child('status').val() == 'lobby')"
+          },
+          "seed": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4294967295 && newData.val() % 1 == 0"
+          },
+          "status": {
+            ".validate": "newData.val() == 'lobby' || newData.val() == 'countdown' || newData.val() == 'playing' || newData.val() == 'finished'"
+          },
+          "startAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9007199254740991"
+          },
+          "endAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9007199254740991"
+          },
+          "forfeitUid": {
+            ".validate": "newData.isString() && root.child('rooms').child($code).child('players').child(newData.val()).exists() && (newData.val() == data.val() || root.child('rooms').child($code).child('players').child(newData.val()).child('forfeited').val() == true || (root.child('rooms').child($code).child('players').child(newData.val()).child('connected').val() == false && now >= root.child('rooms').child($code).child('players').child(newData.val()).child('lastSeen').val() + 20000) || root.child('rooms').child($code).child('players').child(newData.parent().child('hostUid').val()).child('forfeitClaim/uid').val() == newData.val() || root.child('rooms').child($code).child('players').child(newData.parent().child('guestUid').val()).child('forfeitClaim/uid').val() == newData.val())"
+          },
+          "$other": {
+            ".validate": "false"
+          },
+          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() == auth.uid) || data.child('hostUid').val() == auth.uid)",
+          "forfeitAt": {
+            ".validate": "newData.isNumber() && newData.val() >= newData.parent().child('startAt').val() && newData.val() <= newData.parent().child('endAt').val() && newData.val() <= now + 5000 && (newData.val() == data.val() || (newData.parent().child('forfeitUid').exists() && (newData.val() == root.child('rooms').child($code).child('players').child(newData.parent().child('forfeitUid').val()).child('forfeitAt').val() || newData.val() == root.child('rooms').child($code).child('players').child(newData.parent().child('forfeitUid').val()).child('lastSeen').val() || newData.val() == root.child('rooms').child($code).child('players').child(newData.parent().child('forfeitUid').val()).child('lastSeen').val() + 20000 || newData.val() == root.child('rooms').child($code).child('players').child(newData.parent().child('hostUid').val()).child('forfeitClaim/disconnectedAt').val() + 20000 || newData.val() == root.child('rooms').child($code).child('players').child(newData.parent().child('guestUid').val()).child('forfeitClaim/disconnectedAt').val() + 20000)))"
+          }
+        },
+        "players": {
+          "$uid": {
+            ".validate": "newData.hasChildren([\"name\", \"ready\", \"readySeed\", \"joinedAt\", \"connected\", \"lastSeen\"]) && (($uid == newData.parent().parent().child('meta/hostUid').val() || $uid == newData.parent().parent().child('meta/guestUid').val()) && (newData.child('ready').val() == false || newData.child('readySeed').val() == root.child('rooms').child($code).child('meta').child('seed').val() || newData.child('readySeed').val() == data.child('readySeed').val()))",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 14"
+            },
+            "ready": {
+              ".validate": "newData.isBoolean() && (newData.val() == data.val() || (!data.exists() && newData.val() == false) || ((root.child('rooms').child($code).child('meta').child('status').val() == 'lobby' || root.child('rooms').child($code).child('meta').child('status').val() == 'countdown') && (newData.val() == false || root.child('rooms').child($code).child('meta').child('guestUid').exists())))"
+            },
+            "readySeed": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4294967295 && newData.val() % 1 == 0"
+            },
+            "rematchSeed": {
+              ".validate": "newData.isNumber() && (newData.val() == data.val() || (newData.val() == root.child('rooms').child($code).child('meta').child('seed').val() && (root.child('rooms').child($code).child('meta').child('status').val() == 'finished' || (root.child('rooms').child($code).child('meta').child('endAt').exists() && now >= root.child('rooms').child($code).child('meta').child('endAt').val()) || newData.parent().child('forfeitClaim').exists())))"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber() && ((!data.exists() && newData.val() <= now + 5000 && newData.val() >= now - 60000) || newData.val() == data.val())"
+            },
+            "connected": {
+              ".validate": "newData.isBoolean()"
+            },
+            "lastSeen": {
+              ".validate": "newData.isNumber() && (newData.val() == data.val() || (newData.val() >= now - 15000 && newData.val() <= now + 5000))"
+            },
+            "forfeited": {
+              ".validate": "newData.isBoolean() && (data.val() != true || newData.val() == true || root.child('rooms').child($code).child('meta').child('status').val() == 'lobby')"
+            },
+            "forfeitClaim": {
+              ".validate": "newData.hasChildren([\"uid\", \"disconnectedAt\", \"seed\"]) && ((newData.child('uid').val() == data.child('uid').val() && newData.child('disconnectedAt').val() == data.child('disconnectedAt').val() && newData.child('seed').val() == data.child('seed').val()) || (root.child('rooms').child($code).child('meta/startAt').exists() && now >= root.child('rooms').child($code).child('meta/startAt').val() && newData.child('uid').val() != auth.uid && newData.child('seed').val() == root.child('rooms').child($code).child('meta').child('seed').val() && root.child('rooms').child($code).child('players').child(newData.child('uid').val()).exists() && newData.child('disconnectedAt').val() == root.child('rooms').child($code).child('players').child(newData.child('uid').val()).child('lastSeen').val() && ((root.child('rooms').child($code).child('players').child(newData.child('uid').val()).child('connected').val() == false && now >= newData.child('disconnectedAt').val() + 20000 && newData.child('disconnectedAt').val() + 20000 <= root.child('rooms').child($code).child('meta').child('endAt').val()) || root.child('rooms').child($code).child('players').child(newData.child('uid').val()).child('forfeited').val() == true && root.child('rooms').child($code).child('players').child(newData.child('uid').val()).child('readySeed').val() == root.child('rooms').child($code).child('meta/seed').val())))",
+              "uid": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 128"
+              },
+              "disconnectedAt": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9007199254740991"
+              },
+              "seed": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4294967295 && newData.val() % 1 == 0"
+              },
+              "$other": {
+                ".validate": "false"
+              }
+            },
+            "$other": {
+              ".validate": "false"
+            },
+            ".write": "auth != null && auth.uid == $uid && ((data.exists() && (newData.exists() || root.child('rooms').child($code).child('meta').child('status').val() == 'lobby' || root.child('rooms').child($code).child('meta').child('status').val() == 'countdown')) || (!data.exists() && ($uid == root.child('rooms').child($code).child('meta').child('hostUid').val() || $uid == root.child('rooms').child($code).child('meta').child('guestUid').val()) && root.child('rooms').child($code).child('meta').child('status').val() == 'lobby' && now - root.child('rooms').child($code).child('meta').child('createdAt').val() < 21600000))",
+            "forfeitAt": {
+              ".validate": "newData.isNumber() && (newData.val() == data.val() || (newData.parent().child('forfeited').val() == true && newData.val() >= root.child('rooms').child($code).child('meta/startAt').val() && newData.val() <= root.child('rooms').child($code).child('meta/endAt').val() && newData.val() <= now + 5000))"
+            }
+          }
+        },
+        "progress": {
+          "$uid": {
+            ".validate": "newData.hasChildren([\"seed\", \"wordsSolved\", \"guessesOnSolved\", \"totalGreens\", \"totalYellows\", \"totalGuesses\", \"currentWordIndex\", \"currentWordStartedAtMs\", \"finished\", \"updatedAt\"]) && (newData.child('wordsSolved').val() <= newData.child('currentWordIndex').val() + 1 && newData.child('guessesOnSolved').val() <= newData.child('totalGuesses').val() && newData.child('totalGreens').val() + newData.child('totalYellows').val() <= newData.child('totalGuesses').val() * 5 && newData.child('updatedAt').val() <= now + 5000 && (newData.child('totalGuesses').val() == 0 || (newData.child('updatedAt').val() >= root.child('rooms').child($code).child('meta').child('startAt').val() && (newData.child('updatedAt').val() < root.child('rooms').child($code).child('meta').child('endAt').val() || newData.child('finished').val() == true))) && (!data.exists() || newData.child('seed').val() != data.child('seed').val() || (newData.child('totalGuesses').val() >= data.child('totalGuesses').val() && newData.child('currentWordIndex').val() >= data.child('currentWordIndex').val() && newData.child('updatedAt').val() >= data.child('updatedAt').val() && (data.child('finished').val() != true || newData.child('updatedAt').val() == data.child('updatedAt').val())))) && ($uid == newData.parent().parent().child('meta/hostUid').val() || $uid == newData.parent().parent().child('meta/guestUid').val())",
+            "seed": {
+              ".validate": "newData.isNumber() && newData.val() == newData.parent().parent().parent().child('meta/seed').val()"
+            },
+            "wordsSolved": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2315 && newData.val() % 1 == 0"
+            },
+            "guessesOnSolved": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 13890 && newData.val() % 1 == 0"
+            },
+            "lastSolveMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300000"
+            },
+            "totalGreens": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 69450 && newData.val() % 1 == 0"
+            },
+            "totalYellows": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 69450 && newData.val() % 1 == 0"
+            },
+            "totalGuesses": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 13890 && newData.val() % 1 == 0"
+            },
+            "currentWordIndex": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2315 && newData.val() % 1 == 0"
+            },
+            "currentWordStartedAtMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300000"
+            },
+            "currentPatterns": {
+              "$row": {
+                ".validate": "$row.matches(/^[0-5]$/) && newData.isString() && newData.val().matches(/^[012]{5}$/)"
+              }
+            },
+            "words": {
+              "$index": {
+                ".validate": "newData.hasChildren([\"index\", \"solved\", \"guessCount\", \"startedAtMs\", \"endedAtMs\", \"timeMs\"]) && (newData.child('endedAtMs').val() >= newData.child('startedAtMs').val() && newData.child('timeMs').val() == newData.child('endedAtMs').val() - newData.child('startedAtMs').val() && (newData.child('solved').val() == false || newData.child('guessCount').val() > 0)) && $index.matches(/^[0-9]{1,4}$/) && newData.child('index').val() <= newData.parent().parent().child('currentWordIndex').val()",
+                "index": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2315 && newData.val() % 1 == 0"
+                },
+                "solved": {
+                  ".validate": "newData.isBoolean()"
+                },
+                "guessCount": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6 && newData.val() % 1 == 0"
+                },
+                "startedAtMs": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300000"
+                },
+                "endedAtMs": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300000"
+                },
+                "timeMs": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300000"
+                },
+                "patterns": {
+                  "$row": {
+                    ".validate": "$row.matches(/^[0-5]$/) && newData.isString() && newData.val().matches(/^[012]{5}$/)"
+                  }
+                },
+                "$other": {
+                  ".validate": "false"
+                }
+              }
+            },
+            "finished": {
+              ".validate": "newData.isBoolean()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9007199254740991"
+            },
+            "forfeited": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": "false"
+            },
+            ".write": "auth != null && auth.uid == $uid && ((!newData.exists() && (root.child('rooms').child($code).child('meta').child('status').val() == 'lobby' || root.child('rooms').child($code).child('meta').child('status').val() == 'countdown')) || root.child('rooms').child($code).child('players').child(auth.uid).exists())"
+          }
+        },
+        "$other": {
+          ".validate": "false"
+        }
+      }
+    }
+  }
+}

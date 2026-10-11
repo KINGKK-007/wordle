@@ -4,12 +4,14 @@ interface HomeScreenProps {
   onUnlimited: () => void;
   onTwoPlayer: () => void;
   onEnterCode: () => void;
+  onDuel: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onUnlimited,
   onTwoPlayer,
   onEnterCode,
+  onDuel,
 }) => {
   return (
     <main className="home-screen" role="main">
@@ -54,6 +56,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <div className="mode-card__desc">
             Set a secret word and share a challenge link or code. Your friend guesses it — Wordle-style.
           </div>
+        </button>
+        <button className="mode-card mode-card--duel" onClick={onDuel} id="duel-mode-btn" aria-label="Duel (1v1): race a friend in real time">
+          <span className="mode-card__badge">Live · 2 Players</span>
+          <span className="mode-card__icon" aria-hidden="true">⚔️</span>
+          <div className="mode-card__title">Duel (1v1)</div>
+          <div className="mode-card__desc">Same words. Same clock. Race a friend for 1, 2, or 5 minutes.</div>
         </button>
       </div>
 
