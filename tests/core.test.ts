@@ -2,9 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { evaluateGuess, getBestLetterState } from '../src/utils/evaluateGuess';
 import { encodeWord, decodeWord, encodeToCode, decodeFromCode } from '../src/utils/wordCodec';
 import { VALID_GUESSES } from '../src/data/validGuesses';
+import { ANSWER_LIST } from '../src/data/answers';
 
-const states = (guess: string, answer: string) => evaluateGuess(guess.toLowerCase(), answer.toLowerCase()).map(letter => letter.state);
+const states = (guess: string, answer: string) =>
+  evaluateGuess(guess.toLowerCase(), answer.toLowerCase()).map((letter) => letter.state);
 describe('Wordle two-pass evaluation', () => {
+  it('keeps answer and guess dictionaries coherent and unique', () => {
+    const valid = new Set(VALID_GUESSES);
+    expect(valid.size).toBe(VALID_GUESSES.length);
+    expect(new Set(ANSWER_LIST).size).toBe(ANSWER_LIST.length);
+    expect(ANSWER_LIST.every((answer) => /^[a-z]{5}$/.test(answer) && valid.has(answer))).toBe(
+      true,
+    );
+  });
   it.each([
     ['CRANE', 'CRANE', ['correct', 'correct', 'correct', 'correct', 'correct']],
     ['BOBBY', 'ABBEY', ['present', 'absent', 'correct', 'absent', 'correct']],
@@ -29,13 +39,18 @@ describe('challenge codec', () => {
       expect(encodeWord(word).toLowerCase()).not.toContain(word);
     }
   });
-  it.each(['', '!', 'AAAAA', '====', '!!!invalid!!!', 'tooshort'])('rejects malformed URL payload %s', payload => expect(decodeWord(payload)).toBeNull());
-  it.each(['', 'AAA', '-----', '0000'])('rejects malformed code %s', code => expect(decodeFromCode(code)).toBeNull());
+  it.each(['', '!', 'AAAAA', '====', '!!!invalid!!!', 'tooshort'])(
+    'rejects malformed URL payload %s',
+    (payload) => expect(decodeWord(payload)).toBeNull(),
+  );
+  it.each(['', 'AAA', '-----', '0000'])('rejects malformed code %s', (code) =>
+    expect(decodeFromCode(code)).toBeNull(),
+  );
   it('rejects truncated and single-character tampered versioned payloads', () => {
-    const payload=encodeWord('crane');
-    expect(decodeWord(payload.slice(0,-1))).toBeNull();
-    for (let i=0;i<payload.length;i++) {
-      const changed=payload.slice(0,i)+(payload[i]==='A'?'B':'A')+payload.slice(i+1);
+    const payload = encodeWord('crane');
+    expect(decodeWord(payload.slice(0, -1))).toBeNull();
+    for (let i = 0; i < payload.length; i++) {
+      const changed = payload.slice(0, i) + (payload[i] === 'A' ? 'B' : 'A') + payload.slice(i + 1);
       expect(decodeWord(changed)).toBeNull();
     }
   });

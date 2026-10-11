@@ -11,7 +11,9 @@
     "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:e2e": "playwright test",
+    "test:rules": "DEBUG= firebase emulators:exec --only database --project demo-wordle-duel \"vitest run --config vitest.rules.config.ts\""
   },
   "dependencies": {
     "firebase": "^12.19.0",
