@@ -22,14 +22,15 @@ export function generateShareText(
   highContrast = false,
 ): string {
   const emojis = highContrast ? STATE_EMOJIS_HC : STATE_EMOJIS;
-  const title = mode === 'unlimited' ? 'Custom Wordle' : 'Custom Wordle – 2P';
+  const title = `Custom Wordle · ${mode === 'unlimited' ? 'Unlimited' : 'Secret Word'}`;
   const score = `${attemptCount}/6`;
 
   const grid = evaluatedRows
     .map((row) => row.map((cell) => emojis[cell.state] || '⬛').join(''))
     .join('\n');
 
-  return `${title} ${score}\n\n${grid}`;
+  const destination = mode === 'unlimited' ? '/#/unlimited' : '/#/challenge';
+  return `${title} ${score}\n\n${grid}\n\n${mode === 'unlimited' ? 'Your next word is waiting.' : 'Pick a word for a friend.'}\n${window.location.origin}${destination}`;
 }
 
 /**
@@ -69,13 +70,14 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 export async function shareOrCopy(
   text: string,
   title: string,
-): Promise<'shared' | 'copied' | 'failed'> {
+): Promise<'shared' | 'copied' | 'failed' | 'cancelled'> {
   if (navigator.share) {
     try {
       await navigator.share({ title, text });
       return 'shared';
-    } catch {
-      // User cancelled or share failed, try clipboard
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+      // A failed native share can still fall back to the clipboard.
     }
   }
   const copied = await copyToClipboard(text);
