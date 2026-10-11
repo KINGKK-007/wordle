@@ -10,15 +10,13 @@ test('a new mobile player can choose modes without an onboarding barrier', async
     'Unlimited',
   ]);
   await expect(page.getByRole('button', { name: 'Enter a challenge code' })).toHaveCount(0);
-  const cards = await page
-    .locator('.mode-card')
-    .evaluateAll((xs) =>
-      xs.map((x) => ({
-        left: x.getBoundingClientRect().left,
-        right: x.getBoundingClientRect().right,
-        bottom: x.getBoundingClientRect().bottom,
-      })),
-    );
+  const cards = await page.locator('.mode-card').evaluateAll((xs) =>
+    xs.map((x) => ({
+      left: x.getBoundingClientRect().left,
+      right: x.getBoundingClientRect().right,
+      bottom: x.getBoundingClientRect().bottom,
+    })),
+  );
   expect(cards.every((c) => c.left >= 0 && c.right <= 320 && c.bottom <= 740)).toBe(true);
   await page.getByRole('button', { name: /Secret Word:/ }).click();
   await page.getByRole('button', { name: /Enter challenge code/ }).click();

@@ -196,19 +196,19 @@ Current scoring is computed by clients from shared progress, and answers can be 
 
 ## 14. Release acceptance checklist
 
-- [ ] Home order is Live Duel → Secret Word → Unlimited.
-- [ ] Home has no standalone challenge-code entry and no automatic modal blocking mode selection.
-- [ ] Secret Word has its own create/join hub and working old/new routes.
-- [ ] Four-character challenge codes and five-character room codes have distinct context.
-- [ ] Invitations, help, headings and statistics use the shipped names.
-- [ ] Live Duel join accepts the documented code/link formats and handles malformed input.
-- [ ] Completed Duel shares route new players into Live Duel rather than a finished room.
-- [ ] Five tile reveals have consistent appearance/cadence and correct completion behavior.
-- [ ] Reduced motion and high contrast work with the revised reveal.
-- [ ] Solo/custom mechanics and persistence still pass regressions.
-- [ ] Two separate clients finish a match, agree on results, rematch and exit cleanly.
-- [ ] Phone/desktop checks, lint, types, tests and production build pass.
-- [ ] Focused commits are pushed to GitHub; no environment files or credentials are tracked.
-- [ ] Existing stable production URL serves the verified new release.
+- [x] Home order is Live Duel → Secret Word → Unlimited.
+- [x] Home has no standalone challenge-code entry and no automatic modal blocking mode selection.
+- [x] Secret Word has its own create/join hub and working old/new routes.
+- [x] Four-character challenge codes and five-character room codes have distinct context.
+- [x] Invitations, help, headings and statistics use the shipped names.
+- [x] Live Duel join accepts the documented code/link formats and handles malformed input.
+- [x] Completed Duel shares route new players into Live Duel rather than a finished room.
+- [x] Five tile reveals have consistent appearance/cadence and correct completion behavior.
+- [x] Reduced motion and high contrast work with the revised reveal.
+- [x] Solo/custom mechanics and persistence still pass regressions.
+- [x] Two separate clients finish a match, agree on results, rematch and exit cleanly.
+- [x] Phone/desktop checks, lint, types, tests and production build pass.
+- [x] Focused commits are pushed to GitHub; no environment files or credentials are tracked.
+- [x] Existing stable production URL serves the verified new release.
 
 Release evidence and exact outcomes will be recorded in `docs/VERIFICATION.md` after implementation.

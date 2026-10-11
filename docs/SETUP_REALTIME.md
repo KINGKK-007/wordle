@@ -60,7 +60,7 @@ When the owner chooses to deploy:
 5. Add the resulting hostname to Firebase Auth authorized domains. Social preview image URLs use Vercel system hostname variables automatically; keep **Automatically expose System Environment Variables** enabled, or set optional `VITE_SITE_URL` to your public origin.
 6. Verify two-device join, readiness, countdown, progress, reconnect and rematch.
 
-The current `custom-wordle` Vercel project has Production and Preview Firebase settings and was deployed from the CLI. Automatic GitHub deployments are not connected; connect `KINGKK-007/wordle` in Vercel to enable deployment on pushes. Future CLI releases can use `npx vercel --prod` from this linked workspace.
+The current `custom-wordle` Vercel project has Production and Preview Firebase settings and was deployed from the CLI. Automatic GitHub deployments are not connected; connect `KINGKK-007/wordle` in Vercel to enable deployment on pushes. Future CLI releases can use `npx vercel --prod --scope kingkk-007s-projects` from this linked workspace.
 
 A production build without required Firebase config displays “Duel mode isn't configured yet.” Explicit `mock` production builds are useful for preview testing but only synchronize tabs within one browser profile and origin; they cannot connect friends on separate phones.
 

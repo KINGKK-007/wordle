@@ -77,7 +77,7 @@ If neither player solved a word, final-solve time is null and skipped. Failed/in
 
 ## Production and Vercel deployment
 
-The app is deployed to [custom-wordle-nine.vercel.app](https://custom-wordle-nine.vercel.app), using the existing `custom-wordle` project with Firebase variables in Production and Preview. Automatic GitHub deployments are not connected; the linked workspace can publish future releases with `npx vercel --prod`. To configure a separate project:
+The app is deployed to [custom-wordle-nine.vercel.app](https://custom-wordle-nine.vercel.app), using the existing `custom-wordle` project with Firebase variables in Production and Preview. Automatic GitHub deployments are not connected; the linked workspace can publish future releases with `npx vercel --prod --scope kingkk-007s-projects`. To configure a separate project:
 
 1. Complete [Firebase setup](docs/SETUP_REALTIME.md): project, web app, Realtime Database, anonymous sign-in and published `database.rules.json`.
 2. Import this GitHub repository in Vercel. Choose **Vite**, Node **24.x**, `npm run build` and `dist`.
