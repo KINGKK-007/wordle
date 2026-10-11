@@ -88,7 +88,7 @@ describe('challenge routes and fresh boards', () => {
     );
     const view = openApp(`#/play?w=${valid}`);
     expect(firstRow().textContent).toBe('');
-    expect(screen.getByLabelText('Challenge from Player 1')).toBeVisible();
+    expect(screen.getByLabelText('Secret Word · A puzzle from your friend')).toBeVisible();
     typeGuess('slate');
     act(() => vi.advanceTimersByTime(SOLO_FLIP_TOTAL_MS));
     expect(firstRow()).toHaveTextContent('SLATE');
@@ -121,9 +121,9 @@ describe('challenge routes and fresh boards', () => {
     act(() => vi.advanceTimersByTime(2000));
     expect(screen.getByRole('dialog', { name: 'You won!' })).toBeVisible();
     expect(loadStats('2player').played).toBe(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Set a New Word' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create a word' }));
     act(() => vi.runOnlyPendingTimers());
-    expect(screen.getByRole('heading', { name: 'Player 1: Set a Secret Word' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Create a secret word' })).toBeVisible();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
@@ -207,12 +207,41 @@ describe('restored Unlimited games and first-use help', () => {
     expect(screen.getByRole('button', { name: 'E, correct' })).toBeVisible();
   });
 
-  it('treats a corrupted help flag as first use and repairs it without crashing', () => {
+  it('keeps the first home visit open and shows help only when requested', () => {
     localStorage.setItem('custom-wordle-help-shown', '{broken-json');
     openApp('');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
     expect(screen.getByRole('dialog', { name: 'How To Play' })).toBeVisible();
     expect(localStorage.getItem('custom-wordle-help-shown')).toBe('1');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
+
+describe('multiplayer-first mode navigation', () => {
+  it('offers live, personal and solo modes in that order without home code entry', () => {
+    openApp('');
+    expect(
+      screen
+        .getAllByRole('button')
+        .filter((button) => button.classList.contains('mode-card'))
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual([
+      'Live Duel: race a friend in real time',
+      'Secret Word: create or solve a personal word challenge',
+      'Unlimited: play solo with random words',
+    ]);
+    expect(screen.queryByRole('button', { name: 'Enter a challenge code' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+  it('keeps create and code entry within the Secret Word hub', () => {
+    openApp('#/challenge');
+    expect(screen.getByRole('button', { name: /Create a word/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Enter challenge code/ })).toBeVisible();
+    act(() => setHash('#/challenge/join', true));
+    expect(screen.getByLabelText('Challenge code input')).toBeVisible();
+    act(() => setHash('#/challenge/create', true));
+    expect(screen.getByRole('heading', { name: 'Create a secret word' })).toBeVisible();
   });
 });

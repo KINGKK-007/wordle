@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import './styles/global.css';
 import { Header } from './components/Header';
 import { HomeScreen } from './components/HomeScreen';
+import { ChallengeScreen } from './components/ChallengeScreen';
 import { GameScreen } from './components/GameScreen';
 import { SetWordScreen } from './components/SetWordScreen';
 import { ShareLinkScreen } from './components/ShareLinkScreen';
@@ -14,7 +15,6 @@ import { useToast } from './hooks/useToast';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { ANSWER_LIST } from './data/answers';
 import { decodeWord } from './utils/wordCodec';
-import { loadStats } from './utils/stats';
 import { loadSavedGame, SOLO_GAME_STORAGE_KEY } from './utils/gamePersistence';
 import { readStorage, writeStorage, removeStorage } from './utils/storage';
 
@@ -22,6 +22,7 @@ const DuelScreen = lazy(() => import('./duel/DuelScreen'));
 type Screen =
   | 'home'
   | 'unlimited'
+  | 'challenge'
   | 'set-word'
   | 'share-link'
   | 'enter-code'
@@ -54,8 +55,9 @@ function readRoute(): Route {
   if (hash === '#/duel' || hash.startsWith('#/duel/'))
     return { screen: 'duel', code: hash.slice(7).toUpperCase() || undefined };
   if (hash === '#/unlimited') return { screen: 'unlimited' };
-  if (hash === '#/set') return { screen: 'set-word' };
-  if (hash === '#/code') return { screen: 'enter-code' };
+  if (hash === '#/challenge') return { screen: 'challenge' };
+  if (hash === '#/set' || hash === '#/challenge/create') return { screen: 'set-word' };
+  if (hash === '#/code' || hash === '#/challenge/join') return { screen: 'enter-code' };
   return { screen: 'home' };
 }
 
@@ -85,9 +87,7 @@ export default function App() {
     readRoute().screen === 'unlimited' ? (loadSavedGame()?.answer ?? pickAnswer()) : '',
   );
   const [twoPlayerWord, setTwoPlayerWord] = useState('');
-  const [showHelp, setShowHelp] = useState(
-    () => readRoute().screen === 'home' && readStorage(HELP_SHOWN_KEY) !== '1',
-  );
+  const [showHelp, setShowHelp] = useState(false);
   const [globalModal, setGlobalModal] = useState<'stats' | 'settings' | null>(null);
   const [gameKey, setGameKey] = useState(0);
   const isGame = route.screen === 'unlimited' || route.screen === 'two-player-game';
@@ -134,11 +134,13 @@ export default function App() {
     setGameKey((key) => key + 1);
   };
   const subtitle = isDuel
-    ? 'Duel'
+    ? 'Live Duel'
     : route.screen === 'unlimited'
       ? 'Unlimited'
-      : ['set-word', 'share-link', 'two-player-game'].includes(route.screen)
-        ? '2-Player'
+      : ['challenge', 'set-word', 'share-link', 'enter-code', 'two-player-game'].includes(
+            route.screen,
+          )
+        ? 'Secret Word'
         : undefined;
 
   return (
@@ -154,16 +156,21 @@ export default function App() {
       {route.screen === 'home' && (
         <HomeScreen
           onUnlimited={() => navigate('#/unlimited')}
-          onTwoPlayer={() => navigate('#/set')}
-          onEnterCode={() => navigate('#/code')}
+          onTwoPlayer={() => navigate('#/challenge')}
           onDuel={() => navigate('#/duel')}
+        />
+      )}
+      {route.screen === 'challenge' && (
+        <ChallengeScreen
+          onCreate={() => navigate('#/challenge/create')}
+          onJoin={() => navigate('#/challenge/join')}
         />
       )}
       {isDuel && (
         <Suspense
           fallback={
             <main className="error-screen" role="status">
-              Loading Duel…
+              Loading Live Duel…
             </main>
           }
         >
@@ -190,6 +197,8 @@ export default function App() {
       )}
       {route.screen === 'set-word' && (
         <SetWordScreen
+          key={`setter-${gameKey}`}
+          onBack={() => navigate('#/challenge')}
           onWordSet={(word) => {
             setTwoPlayerWord(word);
             setRoute({ screen: 'share-link' });
@@ -198,7 +207,16 @@ export default function App() {
         />
       )}
       {route.screen === 'share-link' && twoPlayerWord && (
-        <ShareLinkScreen word={twoPlayerWord} onToast={showToast} onBackToMenu={goHome} />
+        <ShareLinkScreen
+          word={twoPlayerWord}
+          onToast={showToast}
+          onBackToMenu={goHome}
+          onCreateAnother={() => {
+            setTwoPlayerWord('');
+            setRoute({ screen: 'set-word' });
+            setGameKey((key) => key + 1);
+          }}
+        />
       )}
       {route.screen === 'enter-code' && (
         <CodeInputScreen
@@ -207,7 +225,7 @@ export default function App() {
             setGameKey((key) => key + 1);
           }}
           onToast={showToast}
-          onCancel={goHome}
+          onCancel={() => navigate('#/challenge')}
         />
       )}
       {route.screen === 'two-player-game' && route.word && (
@@ -218,7 +236,7 @@ export default function App() {
           settings={settings}
           onSettingsChange={toggleSetting}
           onToast={showToast}
-          onSetNewWord={() => navigate('#/set')}
+          onSetNewWord={() => navigate('#/challenge/create')}
           onBackToMenu={goHome}
         />
       )}
@@ -244,8 +262,7 @@ export default function App() {
       <StatsModal
         isOpen={globalModal === 'stats'}
         onClose={() => setGlobalModal(null)}
-        stats={loadStats('unlimited')}
-        mode="unlimited"
+        mode="duel"
         gameStatus="playing"
       />
     </div>
