@@ -1,10 +1,14 @@
 # Custom Wordle
 
-A mobile-friendly Wordle game with the familiar dark tile-and-keyboard interface. Built with React 19, TypeScript and Vite. Three modes:
+**Five letters. Better together.** A familiar Wordle-style game built around friendly multiplayer, using React 19, TypeScript and Vite.
 
-- **Unlimited:** random solo words, saved boards, Hard Mode, separate statistics, and no immediate answer repeats.
-- **2-Player Custom Challenge:** set any valid five-letter word and share an encoded link or four-character code. Opening the link starts a fresh challenge; the answer is obfuscated, not encrypted.
-- **Duel (1v1):** share a five-character room code, choose 1/2/5 minutes, both Ready, then race through the same seeded word sequence after a synchronized five-second countdown. Live scores, color-only opponent grids, reconnect, forfeits, results, rematches and local Duel stats are included.
+**Play:** [custom-wordle-nine.vercel.app](https://custom-wordle-nine.vercel.app)
+
+- **Live Duel:** invite a friend with a link or five-character room code. Pick 1, 2 or 5 minutes, both get ready, then race through the same words after a synchronized countdown. Includes live color-only rival grids, reconnect, refresh recovery, clear results, rematches and local statistics.
+- **Secret Word:** choose a valid five-letter word for a friend, or enter their four-character challenge code inside the mode. Friends can solve it anytime with six guesses and no clock. Native sharing and another-word creation make it easy to trade puzzles.
+- **Unlimited:** classic solo practice, saved boards, Hard Mode, separate statistics, and no immediate answer repeats.
+
+No sign-up is required. The home page leads with Live Duel and uses inline guidance; detailed accessible help remains available. The full product, launch and business strategy is in [PRODUCT_PLAN.md](docs/PRODUCT_PLAN.md), with shipped changes separated from future investments.
 
 ## Local development
 
@@ -16,7 +20,7 @@ npm i
 npm run dev
 ```
 
-Open the URL printed by Vite. Without Firebase configuration, development uses `MockTransport`: create a Duel and open its link in **another tab of the same browser profile and origin**. Each tab is a separate player; refreshing that tab restores its identity and board. Mock rooms cannot connect separate phones or browsers. Use Firebase for friends on separate devices.
+Open the URL printed by Vite. Without Firebase configuration, development uses `MockTransport`: create a Live Duel and open its link in **another tab of the same browser profile and origin**. Each tab is a separate player; refreshing that tab restores its identity and board. Mock rooms cannot connect separate phones or browsers. Use Firebase for friends on separate devices.
 
 To choose a transport, copy `.env.example` to `.env.local` and set `VITE_DUEL_TRANSPORT=mock` or `firebase`. The Firebase SDK loads only when Firebase Duel is used. A production build without Firebase configuration displays a friendly setup message. See [realtime setup](docs/SETUP_REALTIME.md) for every environment variable and exact console steps.
 
@@ -41,8 +45,8 @@ GitHub Actions runs install, lint, typecheck, tests, build and database security
 
 ```mermaid
 flowchart LR
-  Solo[Unlimited / Custom Challenge] --> Local[Validated localStorage]
-  Duel[Duel UI + pure progress reducer] --> Transport[DuelTransport interface]
+  Solo[Secret Word / Unlimited] --> Local[Validated localStorage]
+  Duel[Live Duel UI + pure progress reducer] --> Transport[DuelTransport interface]
   Transport --> Mock[MockTransport: Web Locks + BroadcastChannel + localStorage]
   Transport --> Firebase[Lazy modular Firebase SDK]
   Firebase --> Auth[Anonymous Auth: per-tab session persistence]
@@ -50,9 +54,9 @@ flowchart LR
   RTDB --> Clock[Server clock offset + onDisconnect]
 ```
 
-`src/components` provides reusable board, keyboard and accessible modals. `src/hooks/useGame.ts` owns solo input/reveal/persistence. `src/utils` contains evaluation, checksummed challenge encoding, validated storage and durable stats receipts. `src/duel` separates pure ranking/seed/progress logic from transports, UI and local snapshots. All routes use hashes (`#/unlimited`, `#/play?w=…`, `#/duel`, `#/duel/ABCDE`). Share links use the active origin.
+`src/components` provides reusable board, keyboard and accessible modals. `src/hooks/useGame.ts` owns solo input/reveal/persistence. `src/utils` contains evaluation, checksummed challenge encoding, validated storage and durable stats receipts. `src/duel` separates pure ranking/seed/progress logic from transports, UI and local snapshots. All routes use hashes (`#/duel`, `#/duel/ABCDE`, `#/challenge`, `#/challenge/create`, `#/challenge/join`, `#/unlimited`, `#/play?w=…`). Legacy `#/set` and `#/code` links remain valid. Share links use the active origin.
 
-Duel stores only a seed, color patterns, counts and timestamps in shared state. Each player retains guessed letters locally. Countdown, guess acceptance and the timer derive from the transport's clock. Valid Enter submissions count immediately; invalid guesses and submissions at/after the buzzer do not count. Six failed guesses advance to the next word, and keyboard colors reset. Hard Mode is disabled for both Duel players. Solo reveal timing stays at 500 ms with a 300 ms stagger; Duel uses 250 ms with an 80 ms stagger.
+Duel stores only a seed, color patterns, counts and timestamps in shared state. Each player retains guessed letters locally. Countdown, guess acceptance and the timer derive from the transport's clock. Valid Enter submissions count immediately; invalid guesses and submissions at/after the buzzer do not count. Six failed guesses advance to the next word, and keyboard colors reset. Hard Mode is disabled for both Duel players. Solo reveals each tile over 500 ms with a consistent 80 ms stagger (820 ms total); Live Duel uses 250 ms with the same 80 ms stagger (570 ms total). One animation changes transform, color and border together; reduced motion also removes invisible input delays. All five Duel win tiles complete their bounce before the next word appears.
 
 Database rules require Auth, prevent listing rooms, enforce two seats, limit writes to each player's own nodes and constrain host lifecycle writes. Read [the rules/setup details](docs/SETUP_REALTIME.md). A determined user can derive answers from the public seed/list or forge their own progress; this is intended for friendly play, not competitive ranked play.
 
@@ -69,11 +73,11 @@ Database rules require Auth, prevent listing rooms, enforce two seats, limit wri
 | 5        | Total yellows from valid guesses | More    |
 | 6        | All equal                        | Draw    |
 
-If neither player solved a word, final-solve time is null and skipped. Failed/in-progress words still contribute greens and yellows. Forfeit overrides scores. The same pure function computes the result on both clients; results highlight the deciding row and show each word's answer, guesses and elapsed time. Mutual rematch acceptance keeps the room code and duration, changes the seed, and clears effective readiness.
+If neither player solved a word, final-solve time is null and skipped. Failed/in-progress words still contribute greens and yellows. Forfeit overrides scores. The same pure function computes the result on both clients; results highlight the deciding row and show each word's answer, guesses and elapsed time. Completed-match shares point to the Live Duel entry screen; lobby invites point to the active room. Mutual rematch acceptance keeps the room code and duration, changes the seed, and clears effective readiness.
 
-## Deploying to Vercel (later)
+## Production and Vercel deployment
 
-This repository is prepared for deployment; **no deployment was performed**.
+The app is deployed to [custom-wordle-nine.vercel.app](https://custom-wordle-nine.vercel.app), using the existing `custom-wordle` project with Firebase variables in Production and Preview. Automatic GitHub deployments are not connected; the linked workspace can publish future releases with `npx vercel --prod`. To configure a separate project:
 
 1. Complete [Firebase setup](docs/SETUP_REALTIME.md): project, web app, Realtime Database, anonymous sign-in and published `database.rules.json`.
 2. Import this GitHub repository in Vercel. Choose **Vite**, Node **24.x**, `npm run build` and `dist`.

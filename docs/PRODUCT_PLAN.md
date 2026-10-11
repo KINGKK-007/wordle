@@ -96,6 +96,8 @@ Introduce a Secret Word hub at `#/challenge`, with its own create/join destinati
 - Separate **Create a duel** from **Join a duel** clearly; give room code entry a visible five-character label.
 - Accept pasted invitation links as well as room codes when joining, without confusing them with Secret Word codes. Reject malformed input clearly.
 - Keep a saved nickname editable and explain it as the name the friend sees. Do not ask for email or an account.
+- Offer Resume Room only when the saved room identity matches this tab’s authenticated player; clear expired/not-found resume records.
+- Disable create/join while disconnected, keep retry state truthful, and reduce the display clock to 200 ms without weakening server-time submission checks.
 - Keep the 2-minute default and expose all 1/2/5-minute choices, with a concise indication that 2 minutes is a good first match.
 - Improve lobby copy: say who is missing, who has joined, what the host should share and that both players must be ready.
 - Keep copy code, copy link and native Share actions. Use active-room links for invitations.

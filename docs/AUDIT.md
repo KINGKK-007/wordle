@@ -57,3 +57,22 @@ Firebase remains the production recommendation. Readiness and rematch votes live
 At the buzzer, offline results remain provisional until queued pre-buzzer progress settles; sharing/rematch/stats receipts wait for confirmed final snapshots. This protects exact-once statistics from transient outcomes. Actual anonymous sign-in and cross-device Firebase play cannot be verified without the owner's project; emulator tests inject authenticated clients. The owner must complete `docs/SETUP_REALTIME.md`. Seed derivation/own-score forgery remains possible by design for friendly play. Rooms whose hosts never return require optional trusted six-hour cleanup, documented in that guide.
 
 Small optional scoring suggestion, not implemented: if the game later becomes competitive, consider comparing precision-adjusted server timestamps for the final-solve tie-breaker. The requested policy and client clock correction remain unchanged.
+
+## Multiplayer product follow-up — 12 October 2026
+
+Reviewed all tracked application source, component/hooks/utilities, Duel transports/state/ranking, rule schemas, test suites, dictionary structure, styles, assets, metadata, scripts/CI and documentation. Dictionary checks confirm 2,315 unique answers and 14,855 unique valid guesses, with every answer valid. The business and UX decisions are documented in [PRODUCT_PLAN.md](PRODUCT_PLAN.md).
+
+- Reordered home to Live Duel → Secret Word → Unlimited, emphasized the multiplayer promise and removed the standalone home challenge-code action.
+- Added a mode-local Secret Word create/join hub, preserving legacy routes and codec/storage compatibility.
+- Removed first-visit modal barriers; renamed asynchronous 2-Player copy accurately throughout help, stats, creation, invitations and results.
+- Solo's 300 ms stagger delayed the final two starts to 900/1,200 ms. A consistent 80 ms stagger reduces full reveal from 1,700 to 820 ms while retaining the 500 ms flip.
+- Separate transform/color animations were replaced by one midpoint reveal for background, border and text on all five tiles.
+- Duel's win bounce used 300/400 ms final-column delays but advanced at 280 ms. All five now bounce together and finish within that pause.
+- Reduced-motion CSS previously hid animation while input timers still waited; shared motion-aware completion now releases input and keyboard feedback without that invisible pause.
+- Finished Duel shares previously linked to an occupied finished room. Result shares now open the mode; active lobby invitations still link to the room.
+- Added strict pasted room-link/code parsing, UID-matched resume, useful retry/another-code recovery and disabled create/join while disconnected.
+- Fixed idle progress retries incorrectly restoring the online indicator without any successful write.
+- Removed the nonfunctional always-on dark-theme toggle; statistics now explain their browser/device scope.
+- Improved native/mobile sharing, quiet share cancellation, full selectable puzzle links, another-word flow and multiplayer-first metadata.
+
+Ranking, answer evaluation, Firebase security rules, two-seat capacity and network data shapes remain compatible. Client-controlled scoring and abandoned-room cleanup are documented operational limits; public ranking and paid-scale features are future work rather than launch claims.
