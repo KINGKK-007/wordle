@@ -5,9 +5,10 @@ import { Modal } from '../components/Modal';
 import { SettingsModal } from '../components/SettingsModal';
 import { StatsModal } from '../components/StatsModal';
 import { useKeyboardInput } from '../hooks/useKeyboardInput';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { VALID_GUESS_SET } from '../data/validGuesses';
 import { getBestLetterState, type EvaluatedLetter, type LetterState } from '../utils/evaluateGuess';
-import { copyToClipboard } from '../utils/shareResult';
+import { copyToClipboard, shareOrCopy } from '../utils/shareResult';
 import { createDuelTransport } from './transport';
 import {
   advanceWord,
@@ -24,19 +25,21 @@ import {
 } from './logic';
 import {
   clearDuelSession,
+  loadDuelSession,
   loadLocalDuel,
   loadNickname,
   markDuelHelpShown,
   saveDuelSession,
   saveLocalDuel,
   saveNickname,
-  shouldShowDuelHelp,
   type LocalDuelState,
 } from './localState';
 import { recordDuelResult } from './stats';
 import { DuelResults } from './DuelResults';
-import { formatTimer } from './resultFormatting';
+import { formatDuelShareText, formatTimer } from './resultFormatting';
 import { DUEL_TIMING } from './timing';
+import { parseDuelInvitation } from './joinCode';
+import { DuelError } from './types';
 import type { DuelTransport, DurationSec, PlayerProgress, RoomState } from './types';
 import './duel.css';
 
@@ -118,6 +121,7 @@ export function DuelScreen({
   onToast,
   onBackToMenu,
 }: DuelScreenProps) {
+  const reducedMotion = useReducedMotion();
   const [transport, setTransport] = useState<DuelTransport | null>(null);
   const [uid, setUid] = useState('');
   const [room, setRoom] = useState<RoomState | null>(null);
@@ -125,12 +129,16 @@ export function DuelScreen({
   const [nickname, setNickname] = useState(() => loadNickname() ?? 'Player');
   const [nicknameConfirmed, setNicknameConfirmed] = useState(() => loadNickname() !== null);
   const [joinCode, setJoinCode] = useState('');
+  const [joinError, setJoinError] = useState('');
+  const [savedSession, setSavedSession] = useState(loadDuelSession);
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
+  const [joinAttempt, setJoinAttempt] = useState(0);
   const [duration, setDuration] = useState<DurationSec>(120);
   const [connected, setConnected] = useState(navigator.onLine);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const [showHelp, setShowHelp] = useState(shouldShowDuelHelp);
+  const [showHelp, setShowHelp] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -173,13 +181,15 @@ export function DuelScreen({
   const flushProgress = useCallback(async () => {
     if (writingRef.current || !transportRef.current || !navigator.onLine) return;
     writingRef.current = true;
+    let published = false;
     try {
       while (pendingWriteRef.current && mountedRef.current) {
         const pending = pendingWriteRef.current;
         await transportRef.current.publishProgress(pending.code, pending.progress);
+        published = true;
         if (pendingWriteRef.current === pending) pendingWriteRef.current = null;
       }
-      if (mountedRef.current && navigator.onLine) setConnected(true);
+      if (published && mountedRef.current && navigator.onLine) setConnected(true);
     } catch {
       if (mountedRef.current) setConnected(false);
     } finally {
@@ -230,7 +240,7 @@ export function DuelScreen({
       pendingTimers.forEach(clearTimeout);
       pendingTimers.clear();
     };
-  }, [flushProgress]);
+  }, [flushProgress, connectionAttempt]);
 
   useEffect(() => {
     if (!transport) return;
@@ -286,6 +296,8 @@ export function DuelScreen({
           if (!snapshot) {
             setRoom(null);
             setError('Host left. This room is closed.');
+            if (loadDuelSession()?.roomCode === code) clearDuelSession();
+            setSavedSession(null);
             return;
           }
           setRoom(snapshot);
@@ -294,7 +306,13 @@ export function DuelScreen({
         });
       })
       .catch((cause) => {
-        if (!cancelled) setError(errorMessage(cause));
+        if (!cancelled) {
+          setError(errorMessage(cause));
+          if (cause instanceof DuelError && ['NOT_FOUND', 'EXPIRED'].includes(cause.code)) {
+            if (loadDuelSession()?.roomCode === code) clearDuelSession();
+            setSavedSession(null);
+          }
+        }
       })
       .finally(() => {
         if (!cancelled) setBusy(false);
@@ -303,7 +321,7 @@ export function DuelScreen({
       cancelled = true;
       unsubscribe?.();
     };
-  }, [code, transport, uid, nicknameConfirmed]);
+  }, [code, transport, uid, nicknameConfirmed, joinAttempt]);
 
   useEffect(() => {
     if (!room || !code || !uid) return;
@@ -387,7 +405,7 @@ export function DuelScreen({
     if (previousPhase.current === 'countdown' && phase === 'lobby')
       onToast('Countdown cancelled. Ready up again.');
     previousPhase.current = phase;
-    if (phase === 'playing') setMilestone('Duel started.');
+    if (phase === 'playing') setMilestone('Live Duel started.');
   }, [phase, onToast]);
 
   useEffect(() => {
@@ -413,7 +431,7 @@ export function DuelScreen({
     publish(progress);
     setFlippingRow(null);
     setBouncingRow(null);
-    setMilestone(forfeitUid ? 'Duel ended by forfeit.' : "Time's up!");
+    setMilestone(forfeitUid ? 'Live Duel ended by forfeit.' : "Time's up!");
   }, [phase, room, local, code, forfeitUid, finalAt, now, commitLocal, publish]);
 
   useEffect(() => {
@@ -515,34 +533,41 @@ export function DuelScreen({
       });
       publish(result.progress);
       setFlippingRow(row);
-      schedule(() => {
-        setFlippingRow(null);
-        if (!result.wordComplete) {
-          inputLockedRef.current = false;
-          return;
-        }
-        if (result.solved) {
-          setBouncingRow(row);
-          onToast('Solved!', 700);
-        } else onToast(sequence[current.progress.currentWordIndex].toUpperCase(), 800);
-        schedule(() => {
-          setBouncingRow(null);
-          const latest = localRef.current;
-          const latestRoom = roomRef.current;
-          const serverNow = connection.getServerTime();
-          if (!latest || !latestRoom || getRoomPhase(latestRoom, serverNow) !== 'playing') return;
-          const progress = advanceWord(
-            latest.progress,
-            serverNow,
-            latestRoom.meta.startAt ?? serverNow,
+      schedule(
+        () => {
+          setFlippingRow(null);
+          if (!result.wordComplete) {
+            inputLockedRef.current = false;
+            return;
+          }
+          if (result.solved) {
+            setBouncingRow(row);
+            onToast('Solved!', 700);
+          } else onToast(sequence[current.progress.currentWordIndex].toUpperCase(), 800);
+          schedule(
+            () => {
+              setBouncingRow(null);
+              const latest = localRef.current;
+              const latestRoom = roomRef.current;
+              const serverNow = connection.getServerTime();
+              if (!latest || !latestRoom || getRoomPhase(latestRoom, serverNow) !== 'playing')
+                return;
+              const progress = advanceWord(
+                latest.progress,
+                serverNow,
+                latestRoom.meta.startAt ?? serverNow,
+              );
+              commitLocal({ ...latest, progress, currentGuess: '' });
+              publish(progress);
+              inputLockedRef.current = false;
+            },
+            reducedMotion ? 0 : DUEL_TIMING.wordPauseMs,
           );
-          commitLocal({ ...latest, progress, currentGuess: '' });
-          publish(progress);
-          inputLockedRef.current = false;
-        }, DUEL_TIMING.wordPauseMs);
-      }, DUEL_TIMING.revealMs);
+        },
+        reducedMotion ? 0 : DUEL_TIMING.revealMs,
+      );
     },
-    [disabled, sequence, onToast, commitLocal, publish, schedule],
+    [disabled, sequence, onToast, commitLocal, publish, schedule, reducedMotion],
   );
   useKeyboardInput(handleKey, disabled);
 
@@ -603,7 +628,30 @@ export function DuelScreen({
       (await copyToClipboard(value)) ? success : 'Copy unavailable. Select the code or link.',
     );
   };
+  const share = async (value: string, success: string) => {
+    const result = await shareOrCopy(value, 'Custom Wordle · Live Duel');
+    if (result === 'shared') onToast('Shared');
+    else if (result === 'copied') onToast(success);
+    else if (result === 'failed') onToast('Sharing unavailable. Copy the link instead.');
+  };
   const roomLink = code ? `${window.location.origin}/#/duel/${code}` : '';
+  const duelLink = `${window.location.origin}/#/duel`;
+  const invitation = `Same words. Same clock. Race me in a ${room?.meta.durationSec ? room.meta.durationSec / 60 : duration / 60}-minute Live Duel on Custom Wordle. No sign-up.\n${roomLink}`;
+  const resumeCode = savedSession?.uid === uid ? savedSession.roomCode : null;
+  const retryConnection = () => {
+    setError('');
+    if (transport && code) setJoinAttempt((attempt) => attempt + 1);
+    else {
+      setTransport(null);
+      setUid('');
+      setConnectionAttempt((attempt) => attempt + 1);
+    }
+  };
+  const returnToDuel = () => {
+    setError('');
+    setJoinError('');
+    window.location.hash = '/duel';
+  };
   const confirmNickname = () => {
     setNickname(saveNickname(nickname));
     setNicknameConfirmed(true);
@@ -627,9 +675,22 @@ export function DuelScreen({
   if (error) {
     content = (
       <main className="duel-page duel-empty">
-        <h1>{error.includes("isn't configured") ? 'Duel coming soon' : 'Could not join duel'}</h1>
+        <p className="duel-eyebrow">Live Duel</p>
+        <h1>
+          {error.includes("isn't configured") ? 'Live Duel unavailable' : 'Let’s get you playing'}
+        </h1>
         <p role="alert">{error}</p>
-        <button className="btn btn--primary" onClick={leave}>
+        <div className="duel-recovery-actions">
+          <button className="btn btn--primary" onClick={retryConnection} disabled={!connected}>
+            Try Again
+          </button>
+          {code && transport && (
+            <button className="btn btn--outline" onClick={returnToDuel}>
+              Try Another Code
+            </button>
+          )}
+        </div>
+        <button className="btn btn--secondary" onClick={leave}>
           Back to Menu
         </button>
       </main>
@@ -638,25 +699,59 @@ export function DuelScreen({
     content = (
       <main className="duel-page duel-menu">
         <div className="duel-heading">
-          <p className="duel-eyebrow">Same words. Same clock.</p>
-          <h1>Duel (1v1)</h1>
-          <p>Race a friend. Solve the most words before time runs out.</p>
+          <p className="duel-eyebrow">Same words. Same clock. Friendly rivalry.</p>
+          <h1>Live Duel</h1>
+          <p>A friend, a shared clock, and the familiar six guesses.</p>
         </div>
+        <ol className="duel-steps" aria-label="How Live Duel works">
+          <li>
+            <span>1</span>Invite a friend
+          </li>
+          <li>
+            <span>2</span>Both get ready
+          </li>
+          <li>
+            <span>3</span>Most words wins
+          </li>
+        </ol>
+        {resumeCode && (
+          <div className="duel-resume">
+            <div>
+              <strong>Your room · {resumeCode}</strong>
+              <p>Return to your saved room on this tab.</p>
+            </div>
+            <button
+              className="btn btn--outline"
+              disabled={!transport || !connected}
+              onClick={() => {
+                confirmNickname();
+                window.location.hash = `/duel/${resumeCode}`;
+              }}
+            >
+              Resume Room
+            </button>
+          </div>
+        )}
         <label className="duel-field">
           Nickname
           <input
+            aria-label="Nickname"
             maxLength={14}
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             autoComplete="nickname"
+            aria-describedby="duel-nickname-help"
           />
+          <small id="duel-nickname-help">The name your friend sees. No account needed.</small>
         </label>
         <section className="duel-panel">
           <h2>Create a duel</h2>
+          <p className="duel-panel-copy">Start a room and send your friend the invite.</p>
           <DurationPicker value={duration} onChange={setDuration} disabled={busy} />
+          <p className="duel-duration-tip">2 minutes is a good first match.</p>
           <button
             className="btn btn--primary btn--full"
-            disabled={busy || !transport}
+            disabled={busy || !transport || !connected}
             onClick={() =>
               void runAction(async () => {
                 if (!transport) return;
@@ -674,51 +769,53 @@ export function DuelScreen({
         </section>
         <section className="duel-panel">
           <h2>Join a duel</h2>
+          <p className="duel-panel-copy">Have an invite? Enter the room code or paste its link.</p>
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              if (joinCode.length !== 5) {
-                onToast('Enter a 5-character room code.');
+              const invitedCode = parseDuelInvitation(joinCode, window.location.origin);
+              if (!invitedCode) {
+                setJoinError('Use a 5-character room code or a Live Duel link from this site.');
                 return;
               }
+              if (busy || !transport || !connected) return;
+              setJoinError('');
               confirmNickname();
-              window.location.hash = `/duel/${joinCode}`;
+              window.location.hash = `/duel/${invitedCode}`;
             }}
           >
             <label className="duel-field">
-              Room code
+              5-character room code or invitation link
               <input
                 aria-label="Room code"
                 autoCapitalize="characters"
                 autoComplete="off"
                 spellCheck={false}
-                maxLength={5}
+                maxLength={2048}
                 value={joinCode}
                 placeholder="ABCDE"
+                aria-invalid={!!joinError}
+                aria-describedby="duel-code-help"
                 onPaste={(event) => {
                   const pasted = event.clipboardData.getData('text').trim();
-                  const extracted =
-                    pasted.match(/#\/duel\/([A-Z2-9]{5})(?:$|[?&#/])/i)?.[1] ?? pasted;
                   event.preventDefault();
-                  setJoinCode(
-                    extracted
-                      .toUpperCase()
-                      .replace(/[^A-Z2-9]/g, '')
-                      .slice(0, 5),
-                  );
+                  setJoinCode(parseDuelInvitation(pasted, window.location.origin) ?? pasted);
+                  setJoinError('');
                 }}
-                onChange={(event) =>
-                  setJoinCode(
-                    event.target.value
-                      .toUpperCase()
-                      .replace(/[^A-Z2-9]/g, '')
-                      .slice(0, 5),
-                  )
-                }
+                onChange={(event) => {
+                  setJoinCode(event.target.value);
+                  setJoinError('');
+                }}
               />
+              <small id="duel-code-help">Room codes never use I, L, O, 0 or 1.</small>
+              {joinError && (
+                <p className="duel-input-error" role="alert">
+                  {joinError}
+                </p>
+              )}
               <button
                 className="btn btn--outline btn--full"
-                disabled={busy || !transport || joinCode.length !== 5}
+                disabled={busy || !transport || !connected || !joinCode.trim()}
               >
                 Join Duel
               </button>
@@ -726,7 +823,11 @@ export function DuelScreen({
           </form>
         </section>
         <p className="duel-menu-status" role="status">
-          {transport ? (connected ? 'Connected' : 'Reconnecting…') : 'Connecting…'}
+          {!connected
+            ? 'You’re offline. Reconnect to create or join a duel.'
+            : transport
+              ? 'Ready to connect you with a friend'
+              : 'Connecting…'}
         </p>
       </main>
     );
@@ -734,23 +835,25 @@ export function DuelScreen({
     content = (
       <main className="duel-page duel-empty">
         <h1>Join {code}</h1>
-        <p>Choose a nickname for this duel.</p>
+        <p>Choose the name your friend will see in Live Duel.</p>
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (!transport || !connected) return;
             confirmNickname();
           }}
         >
           <label className="duel-field">
             Nickname
             <input
+              aria-label="Nickname"
               maxLength={14}
               value={nickname}
               autoComplete="nickname"
               onChange={(event) => setNickname(event.target.value)}
             />
           </label>
-          <button className="btn btn--primary btn--full" disabled={!transport}>
+          <button className="btn btn--primary btn--full" disabled={!transport || !connected}>
             Join Duel
           </button>
         </form>
@@ -767,8 +870,13 @@ export function DuelScreen({
     content = (
       <main className="duel-page duel-lobby">
         <div className="duel-heading">
-          <p className="duel-eyebrow">Invite a friend</p>
+          <p className="duel-eyebrow">Live Duel · Your room code</p>
           <h1 className="duel-room-code">{code}</h1>
+          <p>
+            {opponentPlayer
+              ? 'Your friend is here. Get ready to race.'
+              : 'Send this invite to the friend you want to race.'}
+          </p>
           <p className="duel-room-link">{roomLink}</p>
         </div>
         <div className="duel-actions">
@@ -781,17 +889,9 @@ export function DuelScreen({
           {typeof navigator.share === 'function' && (
             <button
               className="btn btn--outline"
-              onClick={() =>
-                void navigator
-                  .share({
-                    title: 'Custom Wordle Duel',
-                    text: 'Race me in a Wordle duel!',
-                    url: roomLink,
-                  })
-                  .catch(() => {})
-              }
+              onClick={() => void share(invitation, 'Invite copied')}
             >
-              Share
+              Share Invite
             </button>
           )}
         </div>
@@ -805,7 +905,7 @@ export function DuelScreen({
             />
           </div>
         ) : (
-          <p className="duel-duration-label">{room.meta.durationSec / 60}-minute duel</p>
+          <p className="duel-duration-label">{room.meta.durationSec / 60}-minute Live Duel</p>
         )}
         <div className="duel-players">
           {[uid, opponentId].map((id, index) => {
@@ -817,10 +917,16 @@ export function DuelScreen({
                   className={`duel-connection-dot${player?.connected ? ' duel-connection-dot--online' : ''}`}
                   aria-label={player?.connected ? 'Connected' : 'Disconnected'}
                 />
-                <h2>{index === 0 ? 'You' : 'Opponent'}</h2>
-                <p>{player?.name ?? 'Waiting for opponent…'}</p>
+                <h2>{index === 0 ? 'You' : 'Your friend'}</h2>
+                <p>{player?.name ?? 'Waiting for your friend…'}</p>
                 <strong className={ready ? 'duel-solved' : undefined}>
-                  {ready ? 'Ready ✓' : player ? 'Joined' : 'Not joined'}
+                  {ready
+                    ? 'Ready ✓'
+                    : player
+                      ? player.connected
+                        ? 'Getting ready'
+                        : 'Reconnecting…'
+                      : 'Send the invite'}
                 </strong>
               </div>
             );
@@ -831,10 +937,16 @@ export function DuelScreen({
           disabled={busy || !ownPlayer || !opponentPlayer?.connected || !connected}
           onClick={() => void runAction(() => transport!.setReady(code, !ownReady))}
         >
-          {ownReady ? 'Not ready' : 'Ready'}
+          {ownReady ? 'Not ready' : 'Ready to race'}
         </button>
         <p className="duel-muted duel-centered" role="status">
-          {opponentPlayer ? 'Both players must be ready.' : 'Waiting for opponent…'}
+          {!opponentPlayer
+            ? 'Share the code or link above. Your friend can join in their browser.'
+            : !opponentPlayer.connected
+              ? 'Your friend is reconnecting. Keep this room open.'
+              : ownReady && !isPlayerReady(room, opponentPlayer)
+                ? `You’re ready. Waiting for ${opponentPlayer.name}…`
+                : 'Both players tap Ready to race. The countdown starts together.'}
         </p>
         <p className="duel-menu-status" role="status">
           {connected ? 'Connected' : 'Reconnecting…'}
@@ -867,9 +979,14 @@ export function DuelScreen({
         onRematch={() => void runAction(() => transport!.requestRematch(code))}
         onLeave={leave}
         onShare={() => {
-          const result = rankDuel(ownFinal, opponentFinal);
-          const text = `Custom Wordle Duel ⚔️ ${formatTimer(room.meta.durationSec * 1000)} — ${ownFinal.wordsSolved} words vs ${opponentFinal.wordsSolved} · ${result.winner === 'a' ? 'I won!' : result.winner === 'b' ? 'I lost' : 'Draw'} 🟩🟨\n${roomLink}`;
-          void copy(text, 'Result copied');
+          const text = formatDuelShareText(
+            ownFinal,
+            opponentFinal,
+            room.meta.durationSec,
+            duelLink,
+            settings.highContrast,
+          );
+          void share(text, 'Result copied');
         }}
       />
     );
@@ -880,7 +997,7 @@ export function DuelScreen({
           <div>
             <p className="duel-score">
               You {ownProgress?.wordsSolved ?? 0} <span>—</span>{' '}
-              {opponentProgress?.wordsSolved ?? 0} Opp
+              {opponentProgress?.wordsSolved ?? 0} {opponentPlayer?.name ?? 'Friend'}
             </p>
             <p className="duel-word-number">Word #{(ownProgress?.currentWordIndex ?? 0) + 1}</p>
           </div>
@@ -902,7 +1019,7 @@ export function DuelScreen({
             <small>
               {opponentPlayer?.connected
                 ? `Word #${(opponentProgress?.currentWordIndex ?? 0) + 1} · ${opponentProgress?.wordsSolved ?? 0} solved`
-                : 'Opponent disconnected, waiting…'}
+                : 'Opponent disconnected. Reconnect within 20 seconds.'}
             </small>
           </div>
           <div
@@ -940,6 +1057,7 @@ export function DuelScreen({
           flipStaggerMs={DUEL_TIMING.staggerMs}
           flipDurationMs={DUEL_TIMING.flipMs}
           bounceDurationMs={DUEL_TIMING.bounceMs}
+          bounceStaggerMs={DUEL_TIMING.bounceStaggerMs}
         />
         <Keyboard letterStates={letterStates} onKey={handleKey} disabled={disabled} />
         <div className="visually-hidden" aria-live="polite">
@@ -950,7 +1068,7 @@ export function DuelScreen({
         </div>
         {phase === 'finished' && (
           <div className="duel-times-up" role="status">
-            <h1>{forfeitUid ? 'Duel finished' : "Time's up!"}</h1>
+            <h1>{forfeitUid ? 'Live Duel finished' : "Time's up!"}</h1>
             {showResults && !scoresReady && <p>Waiting for final scores…</p>}
           </div>
         )}
@@ -967,11 +1085,11 @@ export function DuelScreen({
           setShowHelp(false);
           markDuelHelpShown();
         }}
-        title="How to Play Duel"
+        title="How to Play Live Duel"
       >
         <p className="help-text">
-          Create a room, share its code or link, and both tap <strong>Ready</strong>. The duel
-          starts after a 5-second countdown.
+          Create a room, share its code or link, and both tap <strong>Ready to race</strong>. The
+          duel starts after a 5-second countdown.
         </p>
         <p className="help-text">
           You get <strong>the same words in the same order</strong>. Solve a word, or use all six
@@ -992,7 +1110,7 @@ export function DuelScreen({
             markDuelHelpShown();
           }}
         >
-          Let's Duel
+          Let’s play
         </button>
       </Modal>
       <StatsModal isOpen={showStats} onClose={() => setShowStats(false)} mode="duel" />
@@ -1004,7 +1122,7 @@ export function DuelScreen({
         hasStarted={true}
         duelMode
       />
-      <Modal isOpen={confirmLeave} onClose={() => setConfirmLeave(false)} title="Leave duel?">
+      <Modal isOpen={confirmLeave} onClose={() => setConfirmLeave(false)} title="Leave Live Duel?">
         <p className="help-text">You'll forfeit this duel.</p>
         <div className="duel-actions">
           <button className="btn btn--outline" onClick={() => setConfirmLeave(false)}>

@@ -11,6 +11,7 @@ export function DuelStatsPanel() {
   ] as const;
   return (
     <>
+      <p className="duel-stats-note">Your Live Duel results on this browser.</p>
       <div className="stats-numbers duel-stats-numbers">
         {items.map(([label, value]) => (
           <div className="stat-item" key={label}>

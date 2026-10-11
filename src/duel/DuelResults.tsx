@@ -36,7 +36,7 @@ export function DuelResults({
   const opponentVote = opponentPlayer?.rematchSeed === room.meta.seed;
   const rows = [
     ['wordsSolved', 'Words solved', own.wordsSolved, opponent.wordsSolved],
-    ['guesses', 'Guesses on solved', own.guessesOnSolved, opponent.guessesOnSolved],
+    ['guesses', 'Guesses to solve', own.guessesOnSolved, opponent.guessesOnSolved],
     [
       'finalSolveTime',
       'Final solve',
@@ -72,7 +72,7 @@ export function DuelResults({
       <div
         className={`duel-result-banner${result.winner === 'a' ? ' duel-result-banner--win' : ''}`}
       >
-        <p className="duel-eyebrow">Duel · {room.meta.durationSec / 60} min</p>
+        <p className="duel-eyebrow">Live Duel · {room.meta.durationSec / 60} min</p>
         <h1>
           {result.decidedBy === 'forfeit' && result.winner === 'a'
             ? 'Opponent forfeited'
@@ -86,7 +86,7 @@ export function DuelResults({
         {!scoresSynced && <p role="status">Reconnecting to confirm final scores…</p>}
       </div>
       <table className="duel-comparison">
-        <caption className="visually-hidden">Duel scores</caption>
+        <caption className="visually-hidden">Live Duel scores</caption>
         <thead>
           <tr>
             <th scope="col">Score</th>
@@ -107,6 +107,9 @@ export function DuelResults({
           ))}
         </tbody>
       </table>
+      <p className="duel-score-explainer">
+        Most words wins. Ties use guesses to solve, final solve time, then green and yellow clues.
+      </p>
       <div className="duel-breakdown" tabIndex={0} role="region" aria-label="Per-word breakdown">
         {indices.length ? (
           indices.map((index) => (
@@ -142,6 +145,9 @@ export function DuelResults({
         </p>
       )}
       <div className="duel-results-actions">
+        <p className="duel-rematch-help">
+          Same friend. Fresh words. Both players accept to play again.
+        </p>
         <button
           className="btn btn--primary btn--full"
           onClick={onRematch}

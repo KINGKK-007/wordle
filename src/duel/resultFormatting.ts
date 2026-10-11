@@ -1,5 +1,18 @@
 import { rankDuel } from './logic';
-import type { PlayerSummary } from './types';
+import type { DurationSec, PlayerSummary } from './types';
+
+/** Finished results invite new players into the mode, never into an occupied room. */
+export function formatDuelShareText(
+  own: PlayerSummary,
+  opponent: PlayerSummary,
+  duration: DurationSec,
+  entryLink: string,
+  highContrast = false,
+): string {
+  const winner = rankDuel(own, opponent).winner;
+  const outcome = winner === 'a' ? 'I won!' : winner === 'b' ? 'Good game!' : 'We drew!';
+  return `Custom Wordle · Live Duel ⚔️\n${duration / 60} min · ${own.wordsSolved} words vs ${opponent.wordsSolved} · ${outcome} ${highContrast ? '🟧🟦' : '🟩🟨'}\nSame words. Same clock. Your turn to race a friend.\n${entryLink}`;
+}
 
 export function formatTimer(ms: number, tenths = false): string {
   const milliseconds = Math.max(0, ms);

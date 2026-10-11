@@ -18,7 +18,8 @@ import {
   type LocalDuelState,
 } from '../src/duel/localState';
 import { loadDuelStats, recordDuelResult } from '../src/duel/stats';
-import { formatTimer, resultExplanation } from '../src/duel/resultFormatting';
+import { formatDuelShareText, formatTimer, resultExplanation } from '../src/duel/resultFormatting';
+import { DuelError } from '../src/duel/types';
 import { DUEL_TIMING } from '../src/duel/timing';
 import type { DuelTransport, PlayerProgress, RoomState } from '../src/duel/types';
 
@@ -62,6 +63,7 @@ function makeRoom(): RoomState {
 class UiTransport implements DuelTransport {
   room = makeRoom();
   listeners = new Set<(room: RoomState | null) => void>();
+  connectionListeners = new Set<(connected: boolean) => void>();
   init = vi.fn(async () => ({ uid: UID }));
   getServerTime = () => Date.now();
   createRoom = vi.fn<DuelTransport['createRoom']>(async () => ({ code: CODE }));
@@ -74,9 +76,15 @@ class UiTransport implements DuelTransport {
     };
   };
   subscribeConnection = (callback: (connected: boolean) => void) => {
+    this.connectionListeners.add(callback);
     callback(true);
-    return () => {};
+    return () => {
+      this.connectionListeners.delete(callback);
+    };
   };
+  disconnect() {
+    for (const listener of this.connectionListeners) listener(false);
+  }
   setReady = vi.fn<DuelTransport['setReady']>(async () => {});
   setDuration = vi.fn<DuelTransport['setDuration']>(async () => {});
   publishProgress = vi.fn(async (_code: string, progress: PlayerProgress) => {
@@ -122,29 +130,38 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(START + 10_000);
   localStorage.clear();
+  window.location.hash = '';
   saveNickname('Player');
   markDuelHelpShown();
   transport = new UiTransport();
-  mocks.create.mockResolvedValue(transport);
+  mocks.create.mockReset().mockResolvedValue(transport);
 });
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe('Duel input and refresh regressions', () => {
-  it('shows first-entry help once and explains shared rules in Duel settings', async () => {
+  it('keeps first-entry instructions inline and offers detailed help and shared Live Duel settings', async () => {
     localStorage.removeItem('custom-wordle-duel-help-shown');
     await mountDuel(null);
-    expect(screen.getByRole('dialog', { name: 'How to Play Duel' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: "Let's Duel" }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('list', { name: 'How Live Duel works' })).toHaveTextContent(
+      'Invite a friend',
+    );
+    act(() =>
+      window.dispatchEvent(new CustomEvent('header-action', { detail: { action: 'help' } })),
+    );
+    expect(screen.getByRole('dialog', { name: 'How to Play Live Duel' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Let’s play' }));
     expect(shouldShowDuelHelp()).toBe(false);
     act(() =>
       window.dispatchEvent(new CustomEvent('header-action', { detail: { action: 'settings' } })),
     );
     const settings = screen.getByRole('dialog', { name: 'Settings' });
     expect(
-      within(settings).getByText('Hard Mode is off in Duel. Both players use the same rules.'),
+      within(settings).getByText('Hard Mode is off in Live Duel. Both players use the same rules.'),
     ).toBeVisible();
     expect(within(settings).getByRole('checkbox', { name: 'Toggle hard mode' })).toBeDisabled();
     expect(within(settings).getByRole('checkbox', { name: 'Toggle hard mode' })).not.toBeChecked();
@@ -153,7 +170,7 @@ describe('Duel input and refresh regressions', () => {
   it('shows friendly setup errors without rendering a broken board', async () => {
     mocks.create.mockRejectedValueOnce(new Error("Duel mode isn't configured yet."));
     await mountDuel(null);
-    expect(screen.getByRole('heading', { name: 'Duel coming soon' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Live Duel unavailable' })).toBeVisible();
     expect(screen.getByRole('alert')).toHaveTextContent("Duel mode isn't configured yet.");
     expect(screen.queryByRole('grid')).toBeNull();
   });
@@ -195,6 +212,16 @@ describe('Duel input and refresh regressions', () => {
     expect(
       screen.getByRole('button', { name: `${answer[0].toUpperCase()}, correct` }),
     ).toBeDisabled();
+    const bounces = Array.from(document.querySelectorAll<HTMLElement>('.tile--bounce'));
+    expect(bounces).toHaveLength(5);
+    expect(
+      bounces.every(
+        (tile) =>
+          Number.parseFloat(tile.style.animationDelay) +
+            Number.parseFloat(tile.style.animationDuration) <=
+          DUEL_TIMING.wordPauseMs,
+      ),
+    ).toBe(true);
     await tick(DUEL_TIMING.wordPauseMs);
     expect(screen.getByText('Word #2')).toBeVisible();
     expect(screen.getByRole('button', { name: answer[0].toUpperCase() })).toBeEnabled();
@@ -340,7 +367,7 @@ describe('Duel input and refresh regressions', () => {
     act(() =>
       window.dispatchEvent(new CustomEvent('header-action', { detail: { action: 'menu' } })),
     );
-    const dialog = screen.getByRole('dialog', { name: 'Leave duel?' });
+    const dialog = screen.getByRole('dialog', { name: 'Leave Live Duel?' });
     expect(view.props.onBackToMenu).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Keep Playing' }));
     act(() =>
@@ -359,7 +386,7 @@ describe('Duel input and refresh regressions', () => {
     const view = await mountDuel(null);
     const input = screen.getByRole('textbox', { name: 'Room code' });
     fireEvent.paste(input, {
-      clipboardData: { getData: () => 'https://friends.example/#/duel/abcde' },
+      clipboardData: { getData: () => `${window.location.origin}/#/duel/abcde` },
     });
     expect(input).toHaveValue(CODE);
     view.unmount();
@@ -367,6 +394,81 @@ describe('Duel input and refresh regressions', () => {
     await mountDuel();
     expect(screen.getByRole('heading', { name: `Join ${CODE}` })).toBeVisible();
     expect(transport.joinRoom).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed or foreign invite input in the mode instead of silently truncating it', async () => {
+    await mountDuel(null);
+    const input = screen.getByRole('textbox', { name: 'Room code' });
+    for (const value of ['ABCD', 'ABCDO', 'https://another.example/#/duel/ABCDE']) {
+      fireEvent.change(input, { target: { value } });
+      fireEvent.click(screen.getByRole('button', { name: 'Join Duel' }));
+      expect(screen.getByRole('alert')).toHaveTextContent('Use a 5-character room code');
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+      expect(window.location.hash).toBe('');
+    }
+    fireEvent.change(input, { target: { value: 'abcde' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Join Duel' }));
+    expect(window.location.hash).toBe(`#/duel/${CODE}`);
+  });
+
+  it('offers room resume only to the matching tab identity and removes an expired receipt', async () => {
+    saveDuelSession(CODE, 'other-tab');
+    const other = await mountDuel(null);
+    expect(screen.queryByRole('button', { name: 'Resume Room' })).toBeNull();
+    other.unmount();
+    saveDuelSession(CODE, UID);
+    const own = await mountDuel(null);
+    fireEvent.click(screen.getByRole('button', { name: 'Resume Room' }));
+    expect(window.location.hash).toBe(`#/duel/${CODE}`);
+    own.unmount();
+    transport.joinRoom.mockRejectedValueOnce(new DuelError('EXPIRED'));
+    await mountDuel();
+    expect(screen.getByRole('alert')).toHaveTextContent('This room has expired.');
+    expect(loadDuelSession()).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try Another Code' }));
+    expect(window.location.hash).toBe('#/duel');
+  });
+
+  it('disables room creation and joining while disconnected', async () => {
+    await mountDuel(null);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Room code' }), {
+      target: { value: CODE },
+    });
+    act(() => transport.disconnect());
+    await tick(DUEL_TIMING.retryMs * 2);
+    expect(screen.getByRole('button', { name: 'Create Duel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Join Duel' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('You’re offline. Reconnect');
+  });
+
+  it('retries initialization after a failed connection without a page reload', async () => {
+    mocks.create.mockRejectedValueOnce(new Error('Connection unavailable'));
+    await mountDuel(null);
+    expect(screen.getByRole('alert')).toHaveTextContent('Connection unavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('heading', { name: 'Live Duel' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Create Duel' })).toBeEnabled();
+  });
+
+  it('respects reduced motion in the next-word input lock as well as the visual reveal', async () => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    await mountDuel();
+    const answer = seededSequence(SEED)[0];
+    act(() => {
+      type(answer);
+      fireEvent.keyDown(window, { key: 'Enter' });
+    });
+    await tick(1);
+    expect(screen.getByText('Word #2')).toBeVisible();
+    expect(screen.getByRole('button', { name: answer[0].toUpperCase() })).toBeEnabled();
   });
 });
 
@@ -436,14 +538,14 @@ describe('Duel local data and all-mode statistics', () => {
     render(<StatsModal isOpen onClose={vi.fn()} mode="unlimited" />);
     const unlimited = screen.getByRole('tab', { name: 'Unlimited' });
     expect(unlimited).toHaveAttribute('aria-selected', 'true');
-    fireEvent.keyDown(unlimited, { key: 'End' });
-    const duel = screen.getByRole('tab', { name: 'Duel' });
+    fireEvent.keyDown(unlimited, { key: 'Home' });
+    const duel = screen.getByRole('tab', { name: 'Live Duel' });
     expect(duel).toHaveFocus();
     expect(duel).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Best words solved');
     expect(screen.getByRole('tabpanel')).toHaveTextContent('5');
-    fireEvent.keyDown(duel, { key: 'ArrowLeft' });
-    expect(screen.getByRole('tab', { name: '2-Player' })).toHaveFocus();
+    fireEvent.keyDown(duel, { key: 'ArrowRight' });
+    expect(screen.getByRole('tab', { name: 'Secret Word' })).toHaveFocus();
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Guess Distribution');
   });
 
@@ -463,6 +565,19 @@ describe('Duel local data and all-mode statistics', () => {
     expect(resultExplanation({ ...a, forfeited: true }, { ...b, forfeited: true })).toBe(
       'Both players forfeited.',
     );
+  });
+
+  it('shares a completed match through Live Duel entry without answer spoilers or an occupied room link', () => {
+    const own = { ...createProgress(SEED), wordsSolved: 3 };
+    const opponent = { ...createProgress(SEED), wordsSolved: 1 };
+    const link = 'https://custom-wordle-nine.vercel.app/#/duel';
+    const shared = formatDuelShareText(own, opponent, 120, link, true);
+    expect(shared).toContain('Live Duel');
+    expect(shared).toContain('3 words vs 1');
+    expect(shared).toContain('🟧🟦');
+    expect(shared.split('\n').at(-1)).toBe(link);
+    expect(shared).not.toContain(CODE);
+    expect(shared).not.toContain(seededSequence(SEED)[0]);
   });
 
   it('keeps cumulative statistics and receipts in memory when writes are blocked', async () => {
