@@ -8,9 +8,9 @@ async function prepare(page: Page, nickname = 'Player') {
   }, nickname);
 }
 async function ready(host: Page, guest: Page) {
-  await expect(host.getByRole('button', { name: 'Ready', exact: true })).toBeEnabled();
-  await host.getByRole('button', { name: 'Ready', exact: true }).click();
-  await guest.getByRole('button', { name: 'Ready', exact: true }).click();
+  await expect(host.getByRole('button', { name: 'Ready to race', exact: true })).toBeEnabled();
+  await host.getByRole('button', { name: 'Ready to race', exact: true }).click();
+  await guest.getByRole('button', { name: 'Ready to race', exact: true }).click();
   await expect(host.getByText('Get ready!', { exact: true })).toBeVisible();
   await expect(guest.getByText('Get ready!', { exact: true })).toBeVisible();
   await expect(host.locator('.duel-game')).toBeVisible();
@@ -27,7 +27,7 @@ for (const width of [320, 360, 1280]) {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/');
-    await page.getByRole('button', { name: /Unlimited Mode:/ }).click();
+    await page.getByRole('button', { name: /Unlimited:/ }).click();
     await page.getByRole('button', { name: 'C', exact: true }).click();
     await expect(page.locator('.row').first()).toHaveText('C');
     await page.keyboard.type('rane');
@@ -49,10 +49,11 @@ for (const width of [320, 360, 1280]) {
     await page.keyboard.type('slate');
     await expect(page.locator('.row').nth(1)).toHaveText('SLATE');
     await page.getByRole('button', { name: 'Back to menu', exact: true }).click();
-    await page.getByRole('button', { name: /2-Player Mode:/ }).click();
+    await page.getByRole('button', { name: /Secret Word:/ }).click();
+    await page.getByRole('button', { name: /Create a word/ }).click();
     await expect(page.locator('.set-word-screen')).toBeVisible();
     await page.keyboard.type('crane');
-    await page.getByRole('button', { name: /Generate Challenge Link/ }).click();
+    await page.getByRole('button', { name: /Create challenge/ }).click();
     const code = await page.locator('.share-block__code').innerText();
     const link = await page.locator('.share-block__url').innerText();
     expect(code).toHaveLength(4);
@@ -60,7 +61,9 @@ for (const width of [320, 360, 1280]) {
     const challenge = await context.newPage();
     await prepare(challenge);
     await challenge.goto(link);
-    await expect(challenge.locator('.game-mode-label')).toHaveText('Challenge from Player 1');
+    await expect(challenge.locator('.game-mode-label')).toHaveText(
+      'Secret Word · A puzzle from your friend',
+    );
     await challenge.keyboard.type('crane');
     await challenge.keyboard.press('Enter');
     await expect(challenge.locator('.row').first().locator('[data-state="correct"]')).toHaveCount(
@@ -69,10 +72,13 @@ for (const width of [320, 360, 1280]) {
     await challenge.reload();
     await expect(challenge.locator('.row').first()).toHaveText('');
     await challenge.getByRole('button', { name: 'Back to menu', exact: true }).click();
-    await challenge.getByRole('button', { name: 'Enter a challenge code' }).click();
+    await challenge.getByRole('button', { name: /Secret Word:/ }).click();
+    await challenge.getByRole('button', { name: /Enter challenge code/ }).click();
     await challenge.getByLabel('Challenge code input').fill(code);
-    await challenge.getByRole('button', { name: /Start Game/ }).click();
-    await expect(challenge.locator('.game-mode-label')).toHaveText('Challenge from Player 1');
+    await challenge.getByRole('button', { name: /Solve their word/ }).click();
+    await expect(challenge.locator('.game-mode-label')).toHaveText(
+      'Secret Word · A puzzle from your friend',
+    );
     await challenge.goto('/#/play?w=bad');
     await expect(challenge.getByRole('heading', { name: 'Invalid Challenge' })).toBeVisible();
     await challenge.close();
@@ -162,11 +168,11 @@ test('duration choices, room capacity and lobby cleanup work in browser tabs', a
     await expect(host.locator('.duel-room-code')).toBeVisible();
     const code = await host.locator('.duel-room-code').innerText();
     await guest.goto(`/#/duel/${code}`);
-    await expect(guest.getByText(`${duration}-minute duel`, { exact: true })).toBeVisible();
+    await expect(guest.getByText(`${duration}-minute Live Duel`, { exact: true })).toBeVisible();
     await third.goto(`/#/duel/${code}`);
     await expect(third.getByRole('alert')).toHaveText('Room is full.');
     await guest.getByRole('button', { name: 'Back to menu', exact: true }).click();
-    await expect(host.getByText('Waiting for opponent…').first()).toBeVisible();
+    await expect(host.getByText('Waiting for your friend…').first()).toBeVisible();
     await guest.goto(`/#/duel/${code}`);
     await expect(guest.locator('.duel-room-code')).toBeVisible();
     await host.getByRole('button', { name: 'Back to menu', exact: true }).click();
@@ -194,9 +200,9 @@ test('countdown cancellation, reconnect and twenty-second forfeit', async ({ con
   await expect(host.locator('.duel-room-code')).toBeVisible();
   const code = await host.locator('.duel-room-code').innerText();
   await guest.goto(`/#/duel/${code}`);
-  await expect(host.getByRole('button', { name: 'Ready', exact: true })).toBeEnabled();
-  await host.getByRole('button', { name: 'Ready', exact: true }).click();
-  await guest.getByRole('button', { name: 'Ready', exact: true }).click();
+  await expect(host.getByRole('button', { name: 'Ready to race', exact: true })).toBeEnabled();
+  await host.getByRole('button', { name: 'Ready to race', exact: true }).click();
+  await guest.getByRole('button', { name: 'Ready to race', exact: true }).click();
   await expect(guest.locator('.duel-countdown')).toBeVisible();
   await guest
     .locator('.duel-countdown')
@@ -204,7 +210,7 @@ test('countdown cancellation, reconnect and twenty-second forfeit', async ({ con
     .click();
   await expect(host.locator('.duel-countdown')).toHaveCount(0);
   await expect(guest.locator('.duel-countdown')).toHaveCount(0);
-  await guest.getByRole('button', { name: 'Ready', exact: true }).click();
+  await guest.getByRole('button', { name: 'Ready to race', exact: true }).click();
   await expect(host.locator('.duel-game')).toBeVisible();
   await expect(guest.locator('.duel-game')).toBeVisible();
   await setGuestOffline(true);
@@ -213,7 +219,7 @@ test('countdown cancellation, reconnect and twenty-second forfeit', async ({ con
   await expect(host.locator('.duel-opponent')).not.toContainText('Opponent disconnected');
   await expect(guest.locator('.duel-game')).toBeVisible();
   await host.getByRole('button', { name: 'Back to menu', exact: true }).click();
-  await expect(host.getByRole('dialog', { name: 'Leave duel?' })).toBeVisible();
+  await expect(host.getByRole('dialog', { name: 'Leave Live Duel?' })).toBeVisible();
   await host.getByRole('button', { name: 'Keep Playing', exact: true }).click();
   await setGuestOffline(true);
   await expect(host.locator('.duel-results')).toBeVisible({ timeout: 30000 });
