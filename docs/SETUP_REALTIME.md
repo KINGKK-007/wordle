@@ -6,12 +6,12 @@ Unlimited and custom challenges work without Firebase. Duel defaults to a same-b
 
 1. Open [Firebase Console](https://console.firebase.google.com/) and choose **Add project**.
 2. Enter a project name, for example `Custom Wordle`. Google Analytics is optional; disable it if unwanted. Click **Create project**, then **Continue**.
-3. On Project Overview, click the **Web** (`</>`) icon. Name the app `Custom Wordle`. Do not select Firebase Hosting; the frontend will eventually be hosted on Vercel.
+3. On Project Overview, click **Add app**, then choose **Web** (`</>`). Name the app `Custom Wordle`. Do not select Firebase Hosting; the frontend will eventually be hosted on Vercel.
 4. Register the app. In **Project settings → General → Your apps → SDK setup and configuration**, choose **Config**. Keep this page open for step 4.
 
 ## 2. Enable anonymous sign-in
 
-1. Open **Build → Authentication → Get started**.
+1. Open **Security → Authentication → Get started** (or use the **Authentication** project shortcut).
 2. Select **Sign-in method → Add new provider → Anonymous**.
 3. Enable it and click **Save**.
 4. Under **Authentication → Settings → Authorized domains**, add the eventual Vercel/custom hostname after it exists. Add `localhost` for local testing if it is absent (new projects may not include it).
@@ -20,9 +20,9 @@ Anonymous Auth uses session persistence: each tab has its own player identity, a
 
 ## 3. Create the Realtime Database and publish rules
 
-1. Open **Build → Realtime Database → Create Database**.
+1. Open **Databases and storage → Realtime Database → Create Database**.
 2. Choose the region nearest your players. Use **Locked mode**, then **Enable**.
-3. Copy the database URL at the top of the Data tab. Use this exact URL, including the regional hostname, rather than guessing from the project ID.
+3. Copy the database endpoint displayed **inside the Data tab, above the database tree**. It ends in `.firebaseio.com` or `.firebasedatabase.app`. The browser address starting with `console.firebase.google.com` is the console page, not this endpoint. Use the exact displayed endpoint, including its regional hostname.
 4. Select **Rules**, replace the contents with the complete [database.rules.json](../database.rules.json) from this repository, and click **Publish**.
 5. Do not use test-mode public read/write rules.
 

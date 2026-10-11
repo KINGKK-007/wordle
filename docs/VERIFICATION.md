@@ -22,3 +22,7 @@ Main JavaScript is approximately 372 kB / 130 kB gzip, versus the original 361 k
 The owner still needs to create the Firebase project, enable Anonymous Auth and Realtime Database, publish `database.rules.json`, and set build-time environment variables. Follow [SETUP_REALTIME.md](SETUP_REALTIME.md). Actual external anonymous sign-in and two-device Firebase traffic need that project; anonymous initialization is covered with mocked SDK regressions, and real database transport operations are covered with authenticated emulator clients. Offline final scores remain provisional until pending submissions synchronize.
 
 Implementation history before this verification record: `97cd476` audit; `0892220` existing-mode fixes; `94fc961` Duel; `17c9ec7` tests/CI; `145bb7c` deployment readiness/docs; `b60136a` Firebase StrictMode identity fix.
+
+## Follow-up: configured Firebase smoke test
+
+On 11 October 2026, the owner completed Firebase setup and supplied the exact database endpoint. The local ignored `.env.local` was configured for the Firebase transport. A real-project two-tab browser test passed anonymous authentication, room creation/join, synchronized countdown, live color-pattern updates, refresh/board recovery, leave/forfeit results and room deletion. No page/console errors or failed Firebase API responses were observed. This follow-up validates the external authentication and database connection that were pending at the initial release. No deployment was performed, and local Firebase values remain untracked.
