@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useKeyboardInput } from '../hooks/useKeyboardInput';
 import { Keyboard } from './Keyboard';
 import { VALID_GUESS_SET } from '../data/validGuesses';
 import type { LetterState } from '../utils/evaluateGuess';
@@ -8,25 +9,32 @@ interface SetWordScreenProps {
   onToast: (msg: string) => void;
 }
 
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast }) => {
   const [word, setWord] = useState('');
   const [hidden, setHidden] = useState(true);
   const [shaking, setShaking] = useState(false);
+  const wordRef = useRef('');
+  const submittedRef = useRef(false);
+  const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateWord = (next: string) => { wordRef.current = next; setWord(next); };
+  useEffect(() => () => { if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current); }, []);
 
   const shake = useCallback(() => {
     setShaking(true);
-    setTimeout(() => setShaking(false), 650);
+    if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+    shakeTimerRef.current = setTimeout(() => setShaking(false), 650);
   }, []);
 
   const handleKey = useCallback((key: string) => {
+    if (submittedRef.current) return;
+    const currentWord = wordRef.current;
     if (key === 'Backspace') {
-      setWord(prev => prev.slice(0, -1));
+      updateWord(currentWord.slice(0, -1));
       return;
     }
     if (key === 'Enter') {
-      const lower = word.toLowerCase();
+      const lower = currentWord.toLowerCase();
       if (lower.length < 5) {
         onToast('Not enough letters');
         shake();
@@ -37,25 +45,16 @@ export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast
         shake();
         return;
       }
+      submittedRef.current = true;
       onWordSet(lower);
       return;
     }
-    if (LETTERS.includes(key) && word.length < 5) {
-      setWord(prev => prev + key);
+    if (/^[A-Z]$/.test(key) && currentWord.length < 5) {
+      updateWord(currentWord + key);
     }
-  }, [word, onWordSet, onToast, shake]);
+  }, [onWordSet, onToast, shake]);
 
-  // Physical keyboard support
-  React.useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.altKey || e.metaKey) return;
-      if (e.key === 'Enter') handleKey('Enter');
-      else if (e.key === 'Backspace') handleKey('Backspace');
-      else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [handleKey]);
+  useKeyboardInput(handleKey);
 
   const emptyLetterStates: Record<string, LetterState> = {};
 

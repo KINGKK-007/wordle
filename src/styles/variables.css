@@ -19,6 +19,9 @@
   --absent: #3a3a3c;
   --present: #b59f3b;
   --correct: #538d4e;
+  --correct-text: #ffffff;
+  --present-text: #121213;
+  --absent-text: #ffffff;
   
   /* High contrast state colors */
   --hc-correct: #f5793a;
@@ -26,7 +29,7 @@
   
   /* Keyboard */
   --key-bg: #818384;
-  --key-text: #ffffff;
+  --key-text: #121213;
   --key-absent: #3a3a3c;
   --key-present: #b59f3b;
   --key-correct: #538d4e;
@@ -71,4 +74,6 @@
   --present: var(--hc-present);
   --key-correct: var(--hc-correct);
   --key-present: var(--hc-present);
+  --correct-text: #121213;
+  --present-text: #121213;
 }

@@ -7,9 +7,10 @@ interface KeyProps {
   isWide?: boolean;
   isSpacer?: boolean;
   onPress: (key: string) => void;
+  disabled?: boolean;
 }
 
-export const Key: React.FC<KeyProps> = ({ label, state, isWide, isSpacer, onPress }) => {
+export const Key: React.FC<KeyProps> = ({ label, state, isWide, isSpacer, onPress, disabled = false }) => {
   if (isSpacer) return <div className="key key--spacer" aria-hidden="true" />;
 
   const keyClass = [
@@ -23,16 +24,17 @@ export const Key: React.FC<KeyProps> = ({ label, state, isWide, isSpacer, onPres
   const handleClick = () => onPress(label);
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault(); // prevent focus stealing from board
-    onPress(label);
   };
 
   const ariaLabel =
     label === 'Enter' ? 'Enter' :
     label === 'Backspace' ? 'Delete' :
-    label;
+    state && state !== 'empty' && state !== 'tbd' ? `${label}, ${state}` : label;
 
   return (
     <button
+      type="button"
+      disabled={disabled}
       className={keyClass}
       aria-label={ariaLabel}
       data-key={label}

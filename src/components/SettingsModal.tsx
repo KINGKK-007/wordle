@@ -12,6 +12,7 @@ interface SettingsModalProps {
   settings: Settings;
   onToggle: (key: keyof Settings) => void;
   hasStarted: boolean; // if a game has started, hard mode can't be changed
+  duelMode?: boolean;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -20,6 +21,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onToggle,
   hasStarted,
+  duelMode = false,
 }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Settings" aria-label="Settings">
@@ -27,7 +29,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="setting-row__info">
           <div className="setting-row__label">Hard Mode</div>
           <div className="setting-row__desc">
-            {hasStarted
+            {duelMode
+              ? 'Hard Mode is off in Duel. Both players use the same rules.'
+              : hasStarted
               ? 'Cannot change during a game'
               : 'Any revealed hints must be used in subsequent guesses'}
           </div>
@@ -35,9 +39,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <label className="toggle" aria-label="Toggle hard mode">
           <input
             type="checkbox"
-            checked={settings.hardMode}
-            onChange={() => !hasStarted && onToggle('hardMode')}
-            disabled={hasStarted}
+            checked={duelMode ? false : settings.hardMode}
+            onChange={() => !hasStarted && !duelMode && onToggle('hardMode')}
+            disabled={hasStarted || duelMode}
           />
           <div className="toggle__track">
             <div className="toggle__thumb" />

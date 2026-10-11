@@ -16,6 +16,7 @@ html {
   height: 100dvh;
   /* Prevent mobile double-tap zoom */
   touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 body {
@@ -27,6 +28,7 @@ body {
   font-size: 16px;
   line-height: 1.5;
   overflow: hidden;
+  overscroll-behavior: none;
   /* Prevent text selection on keyboard keys */
   -webkit-user-select: none;
   user-select: none;
@@ -51,6 +53,11 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
+  min-height: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ============================================================
@@ -72,7 +79,8 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  min-width: 100px;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .header__right {
@@ -81,13 +89,13 @@ body {
 
 .header__center {
   position: absolute;
-  left: 50%;
+  left: calc(50% - 12px);
   transform: translateX(-50%);
 }
 
 .header__title {
   font-family: var(--font-title);
-  font-size: 1.8rem;
+  font-size: clamp(1.1rem, 4.7vw, 1.8rem);
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--text);
@@ -110,6 +118,8 @@ body {
   border: none;
   cursor: pointer;
   padding: 6px;
+  min-width: 44px;
+  min-height: 44px;
   color: var(--text);
   display: flex;
   align-items: center;
@@ -155,7 +165,9 @@ body {
   font-size: 0.875rem;
   padding: 12px 16px;
   border-radius: 4px;
-  white-space: nowrap;
+  max-width: calc(100vw - 24px);
+  text-align: center;
+  overflow-wrap: anywhere;
   animation: toast-in 0.2s ease forwards;
   pointer-events: none;
 }
@@ -172,18 +184,22 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 0;
+  padding: 12px 10px;
   overflow: hidden;
+  min-height: 0;
+  container-type: size;
 }
 
 .board {
   display: grid;
-  grid-template-rows: repeat(6, 1fr);
+  grid-template-rows: repeat(6, minmax(0, 1fr));
   gap: var(--tile-gap);
   width: 100%;
   max-width: var(--board-max-width);
-  height: calc(var(--tile-size) * 6 + var(--tile-gap) * 5);
-  padding: 0 10px;
+  height: auto;
+  aspect-ratio: 5 / 6;
+  max-height: 100%;
+  padding: 0;
 }
 
 /* ============================================================
@@ -191,7 +207,8 @@ body {
    ============================================================ */
 .row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: 0;
   gap: var(--tile-gap);
 }
 
@@ -204,11 +221,12 @@ body {
    ============================================================ */
 .tile {
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: clamp(1.25rem, 7vw, 2rem);
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text);
@@ -241,13 +259,13 @@ body {
 .tile--correct {
   background-color: var(--correct);
   border-color: var(--correct);
-  color: white;
+  color: var(--correct-text);
 }
 
 .tile--present {
   background-color: var(--present);
   border-color: var(--present);
-  color: white;
+  color: var(--present-text);
 }
 
 .tile--absent {
@@ -282,7 +300,7 @@ body {
 
 .key {
   height: var(--key-height);
-  min-width: 43px;
+  min-width: 0;
   padding: 0 4px;
   border: none;
   border-radius: 4px;
@@ -321,6 +339,7 @@ body {
 
 .key--absent {
   background-color: var(--key-absent);
+  color: var(--absent-text);
 }
 
 .key:active {
@@ -340,6 +359,7 @@ body {
 /* Spacer in keyboard rows */
 .key--spacer {
   flex: 0.5;
+  min-width: 0;
   max-width: 20px;
   background: none;
   cursor: default;
@@ -356,7 +376,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 24px;
-  padding: 24px 24px 48px;
+  padding: 24px 24px 24px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .home-screen__logo {
@@ -401,8 +423,8 @@ body {
   border-radius: 2px;
 }
 
-.home-tile--correct { background: var(--correct); }
-.home-tile--present { background: var(--present); }
+.home-tile--correct { background: var(--correct); color: var(--correct-text); }
+.home-tile--present { background: var(--present); color: var(--present-text); }
 .home-tile--absent  { background: var(--absent); }
 
 .home-screen__modes {
@@ -492,12 +514,12 @@ body {
 
 .mode-card--unlimited .mode-card__badge {
   background: rgba(83, 141, 78, 0.2);
-  color: var(--correct);
+  color: #a1d49b;
 }
 
 .mode-card--twoplayer .mode-card__badge {
   background: rgba(181, 159, 59, 0.2);
-  color: var(--present);
+  color: #deca70;
 }
 
 /* ============================================================
@@ -511,7 +533,9 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: max(var(--header-height), 10vh);
+  padding-top: max(calc(var(--header-height) + env(safe-area-inset-top, 0px)), 10dvh);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overscroll-behavior: contain;
   animation: toast-in var(--modal-duration) ease;
 }
 
@@ -524,6 +548,7 @@ body {
   max-height: calc(100vh - var(--header-height) - 48px);
   max-height: calc(100dvh - var(--header-height) - 48px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 24px;
   position: relative;
   animation: modal-in var(--modal-duration) ease;
@@ -538,6 +563,8 @@ body {
   cursor: pointer;
   color: var(--text-muted);
   padding: 4px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -609,8 +636,8 @@ body {
 }
 
 .help-tile--empty { border-color: var(--tile-border-empty); color: var(--text); }
-.help-tile--correct { background: var(--correct); border-color: var(--correct); }
-.help-tile--present { background: var(--present); border-color: var(--present); }
+.help-tile--correct { background: var(--correct); border-color: var(--correct); color: var(--correct-text); }
+.help-tile--present { background: var(--present); border-color: var(--present); color: var(--present-text); }
 .help-tile--absent  { background: var(--absent); border-color: var(--absent); }
 
 .help-divider {
@@ -698,6 +725,7 @@ body {
 
 .distribution__bar--active {
   background: var(--correct);
+  color: #121213;
 }
 
 /* ============================================================
@@ -756,6 +784,7 @@ body {
 
 .toggle input:checked ~ .toggle__track {
   background: var(--correct);
+  color: #121213;
 }
 
 .toggle__thumb {
@@ -944,6 +973,7 @@ body {
   transition: opacity var(--transition-fast), transform var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
+  min-height: 44px;
 }
 
 .btn:active { transform: scale(0.97); }
@@ -960,12 +990,12 @@ body {
 
 .btn--primary {
   background: var(--correct);
-  color: white;
+  color: #121213;
 }
 
 .btn--secondary {
   background: var(--key-bg);
-  color: white;
+  color: #121213;
 }
 
 .btn--outline {
@@ -1026,6 +1056,8 @@ body {
   justify-content: center;
   padding: 24px;
   gap: 20px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .code-input-screen__title {
@@ -1135,8 +1167,8 @@ body {
   }
   
   .key {
-    min-width: 35px;
-    max-width: 35px;
+    min-width: 0;
+    max-width: 43px;
     font-size: 0.75rem;
   }
   
@@ -1145,8 +1177,13 @@ body {
   }
   
   .header__title {
-    font-size: 1.5rem;
+    font-size: clamp(1.05rem, 4.5vw, 1.5rem);
+    letter-spacing: 0;
   }
+  .header { padding: 0 6px; }
+  .icon-btn { padding: 4px; }
+  .header__right { gap: 0; }
+  .header__center { left: 38%; }
 }
 
 @media (max-width: 320px) {
@@ -1156,14 +1193,19 @@ body {
   }
   
   .key {
-    min-width: 28px;
-    max-width: 28px;
+    min-width: 0;
+    max-width: 43px;
     font-size: 0.6875rem;
   }
   
   .key--wide {
     max-width: 48px;
   }
+}
+
+@media (max-width: 340px) {
+  .header__center { left: calc(50% - 44px); }
+  .header__title { font-size: .95rem; }
 }
 
 /* Tall screens: larger board */
@@ -1187,4 +1229,22 @@ body {
   .tile {
     font-size: 1.6rem;
   }
+}
+
+/* Fit the square board to the space remaining above the keyboard, including Duel HUDs. */
+@supports (width: 1cqh) {
+  .board { width: min(100%, var(--board-max-width), calc(100cqh * 5 / 6)); }
+}
+
+@media (max-height: 720px) {
+  .home-screen { justify-content: flex-start; gap: 16px; }
+  .home-screen__logo { margin-bottom: 0; }
+  .mode-card { padding: 16px 22px; }
+  .mode-card__icon { margin-bottom: 6px; }
+}
+
+.key:disabled { cursor: default; }
+input, textarea { user-select: text; -webkit-user-select: text; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--text); outline-offset: 3px;
 }

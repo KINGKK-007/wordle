@@ -12,6 +12,8 @@ interface TileProps {
   flipDelay?: number;
   isBouncing?: boolean;
   bounceDelay?: number;
+  flipDurationMs?: number;
+  bounceDurationMs?: number;
 }
 
 // Maps evaluated LetterState → the CSS variable that holds that colour
@@ -29,6 +31,8 @@ export const Tile: React.FC<TileProps> = ({
   flipDelay = 0,
   isBouncing = false,
   bounceDelay = 0,
+  flipDurationMs = 500,
+  bounceDurationMs = 1000,
 }) => {
   const tileClass = [
     'tile',
@@ -58,18 +62,23 @@ export const Tile: React.FC<TileProps> = ({
     (tileStyle as Record<string, string>)['--tile-flip-color'] =
       flipColor ? FLIP_COLOR_VAR[flipColor] : 'var(--absent)';
     (tileStyle as Record<string, string>)['--flip-delay'] = `${flipDelay}ms`;
+    (tileStyle as Record<string, string>)['--tile-flip-text'] = `var(--${flipColor ?? 'absent'}-text)`;
+    (tileStyle as Record<string, string>)['--flip-duration'] = `${flipDurationMs}ms`;
+    (tileStyle as Record<string, string>)['--flip-midpoint'] = `${flipDurationMs / 2}ms`;
   }
 
   if (isBouncing) {
     // The bounce animation in animations.css reads animationDelay
     tileStyle.animationDelay = `${bounceDelay}ms`;
+    tileStyle.animationDuration = `${bounceDurationMs}ms`;
   }
 
   return (
     <div
       className={tileClass}
       style={tileStyle}
-      aria-label={letter ? `${letter.toUpperCase()} ${state}` : 'empty'}
+      role="gridcell"
+      aria-label={letter ? `${letter.toUpperCase()}, ${state === 'tbd' ? 'not evaluated' : state}` : 'Empty'}
       data-state={state}
     >
       <div className="tile__inner">

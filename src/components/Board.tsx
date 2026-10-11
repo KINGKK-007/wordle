@@ -9,6 +9,9 @@ interface BoardProps {
   shakingRow: number | null;
   flippingRow: number | null;
   bouncingRow: number | null;
+  flipStaggerMs?: number;
+  flipDurationMs?: number;
+  bounceDurationMs?: number;
 }
 
 export const Board: React.FC<BoardProps> = ({
@@ -18,6 +21,9 @@ export const Board: React.FC<BoardProps> = ({
   shakingRow,
   flippingRow,
   bouncingRow,
+  flipStaggerMs = 300,
+  flipDurationMs = 500,
+  bounceDurationMs = 1000,
 }) => {
   const rows = Array(6).fill(null).map((_, i) => {
     const isCurrentRow = i === guesses.length && i < 6;
@@ -35,6 +41,9 @@ export const Board: React.FC<BoardProps> = ({
           isShaking={isShaking}
           isFlipping={isFlipping}
           isBouncing={isBouncing}
+          flipStaggerMs={flipStaggerMs}
+          flipDurationMs={flipDurationMs}
+          bounceDurationMs={bounceDurationMs}
         />
       );
     }

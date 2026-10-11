@@ -36,6 +36,7 @@ export const Keyboard: React.FC<KeyboardProps> = ({ letterStates, onKey, disable
                 state={state}
                 isWide={isWide}
                 onPress={handleKey}
+                disabled={disabled}
               />
             );
           })}

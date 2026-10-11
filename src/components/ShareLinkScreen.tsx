@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { buildChallengeUrl, encodeToCode } from '../utils/wordCodec';
 import { copyToClipboard } from '../utils/shareResult';
 
@@ -17,23 +17,36 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
   const code = encodeToCode(word);
   const [urlCopied, setUrlCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const mountedRef = useRef(true);
+  const timersRef = useRef(new Set<ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    mountedRef.current = true;
+    const timers = timersRef.current;
+    return () => { mountedRef.current = false; for (const timer of timers) clearTimeout(timer); timers.clear(); };
+  }, []);
+  const later = (callback: () => void) => {
+    const timer = setTimeout(() => { timersRef.current.delete(timer); callback(); }, 2000);
+    timersRef.current.add(timer);
+  };
 
   const handleCopyUrl = async () => {
     const ok = await copyToClipboard(url);
+    if (!mountedRef.current) return;
     if (ok) {
       onToast('Link copied!');
       setUrlCopied(true);
-      setTimeout(() => setUrlCopied(false), 2000);
-    }
+      later(() => setUrlCopied(false));
+    } else onToast('Unable to copy link');
   };
 
   const handleCopyCode = async () => {
     const ok = await copyToClipboard(code);
+    if (!mountedRef.current) return;
     if (ok) {
       onToast('Code copied!');
       setCodeCopied(true);
-      setTimeout(() => setCodeCopied(false), 2000);
-    }
+      later(() => setCodeCopied(false));
+    } else onToast('Unable to copy code');
   };
 
   const handleShare = async () => {
@@ -45,11 +58,12 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
           url,
         });
         return;
-      } catch {
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         // fall through to copy
       }
     }
-    handleCopyUrl();
+    await handleCopyUrl();
   };
 
   return (
@@ -68,7 +82,7 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
         </div>
         <h2 className="share-screen__title">Challenge Ready! 🎉</h2>
         <p className="share-screen__subtitle">
-          Share the link or challenge code with Player 2. The word is hidden in the link — they won't be able to cheat!
+          Share the link or challenge code with Player 2. The word is hidden in the link.
         </p>
       </div>
 

@@ -37,24 +37,20 @@ export function generateShareText(
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    // Fallback for older browsers
-    try {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      return true;
-    } catch {
-      return false;
-    }
-  }
+    if (navigator.clipboard) { await navigator.clipboard.writeText(text); return true; }
+  } catch { /* Fall back for browsers without clipboard permissions. */ }
+  const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const textarea = document.createElement('textarea');
+  try {
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(textarea);
+    textarea.select();
+    return typeof document.execCommand === 'function' && document.execCommand('copy');
+  } catch { return false; }
+  finally { textarea.remove(); if (previousFocus?.isConnected) previousFocus.focus(); }
 }
 
 /**

@@ -60,7 +60,7 @@
   to {
     background-color: var(--tile-flip-color);
     border-color:     var(--tile-flip-color);
-    color: white;
+    color: var(--tile-flip-text, white);
   }
 }
 
@@ -77,8 +77,8 @@
  */
 .tile--flipping {
   animation:
-    flip-tile-rotate  500ms var(--flip-delay, 0ms)                          ease-in-out both,
-    flip-tile-color     1ms calc(var(--flip-delay, 0ms) + 250ms) step-end   both;
+    flip-tile-rotate  var(--flip-duration, 500ms) var(--flip-delay, 0ms)                          ease-in-out both,
+    flip-tile-color     1ms calc(var(--flip-delay, 0ms) + var(--flip-midpoint, 250ms)) step-end   both;
 }
 
 /* ── Win bounce ──────────────────────────────────────────────────────────── */
@@ -123,6 +123,7 @@
   *, *::before, *::after {
     animation-duration:        0.01ms !important;
     animation-iteration-count: 1      !important;
+    animation-delay: 0ms !important;
     transition-duration:       0.01ms !important;
   }
 }

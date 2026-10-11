@@ -9,6 +9,9 @@ interface RowProps {
   isShaking?: boolean;
   isFlipping?: boolean;
   isBouncing?: boolean;
+  flipStaggerMs?: number;
+  flipDurationMs?: number;
+  bounceDurationMs?: number;
 }
 
 export const Row: React.FC<RowProps> = ({
@@ -18,6 +21,9 @@ export const Row: React.FC<RowProps> = ({
   isShaking = false,
   isFlipping = false,
   isBouncing = false,
+  flipStaggerMs = 300,
+  flipDurationMs = 500,
+  bounceDurationMs = 1000,
 }) => {
   const tiles = Array(5).fill(null).map((_, i) => {
     let letter: string | undefined;
@@ -52,7 +58,9 @@ export const Row: React.FC<RowProps> = ({
         state={state}
         flipColor={flipColor}
         isFlipping={isFlipping && !!evaluated}
-        flipDelay={i * 300}
+        flipDelay={i * flipStaggerMs}
+        flipDurationMs={flipDurationMs}
+        bounceDurationMs={bounceDurationMs}
         isBouncing={isBouncing && !!evaluated}
         bounceDelay={i * 100}
       />
@@ -62,7 +70,7 @@ export const Row: React.FC<RowProps> = ({
   return (
     <div
       className={`row${isShaking ? ' row--shake' : ''}`}
-      role="group"
+      role="row"
       aria-label={
         evaluated
           ? `Guess: ${evaluated.map(e => e.letter).join('').toUpperCase()}`

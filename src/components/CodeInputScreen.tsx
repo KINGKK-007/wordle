@@ -55,7 +55,7 @@ export const CodeInputScreen: React.FC<CodeInputScreenProps> = ({
         </div>
         <h2 className="code-input-screen__title">Enter Challenge Code</h2>
         <p className="code-input-screen__desc">
-          Type the 8-character code shared by Player 1
+          Type the 4-character code shared by Player 1
         </p>
       </div>
 
@@ -75,13 +75,15 @@ export const CodeInputScreen: React.FC<CodeInputScreenProps> = ({
         autoComplete="off"
         spellCheck={false}
         aria-label="Challenge code input"
+        aria-describedby={error ? 'challenge-code-error' : undefined}
+        aria-invalid={!!error}
         id="challenge-code-input"
         // Allow text selection for this input
         style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
       />
 
       {error && (
-        <p style={{
+        <p id="challenge-code-error" role="alert" style={{
           color: '#ff6b6b',
           fontSize: '0.875rem',
           textAlign: 'center',
