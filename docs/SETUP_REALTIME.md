@@ -1,6 +1,6 @@
 # Set up realtime Duel
 
-Unlimited and custom challenges work without Firebase. Duel defaults to a same-browser mock in development. To play on two phones, configure Firebase. No website has been deployed by this change.
+The production app is live at [custom-wordle-nine.vercel.app](https://custom-wordle-nine.vercel.app), with Firebase configured for realtime Duel. Unlimited and custom challenges work without Firebase. Duel defaults to a same-browser mock in development; follow these steps when configuring another environment.
 
 ## 1. Create the project and web app
 
@@ -49,7 +49,7 @@ The first five required values are API key, auth domain, database URL, project I
 4. Restart `npm run dev` after changing environment variables.
 5. Create a Duel in one tab and open the room link in another tab, browser or device. On another device, use the development host's LAN address with `npm run dev -- --host`; both devices must be on the same network.
 
-## 5. Configure Vercel later
+## 5. Configure Vercel
 
 When the owner chooses to deploy:
 
@@ -59,6 +59,8 @@ When the owner chooses to deploy:
 4. Build/redeploy after changing env vars, since they are embedded at build time.
 5. Add the resulting hostname to Firebase Auth authorized domains. Social preview image URLs use Vercel system hostname variables automatically; keep **Automatically expose System Environment Variables** enabled, or set optional `VITE_SITE_URL` to your public origin.
 6. Verify two-device join, readiness, countdown, progress, reconnect and rematch.
+
+The current `custom-wordle` Vercel project has Production and Preview Firebase settings and was deployed from the CLI. Automatic GitHub deployments are not connected; connect `KINGKK-007/wordle` in Vercel to enable deployment on pushes. Future CLI releases can use `npx vercel --prod` from this linked workspace.
 
 A production build without required Firebase config displays “Duel mode isn't configured yet.” Explicit `mock` production builds are useful for preview testing but only synchronize tabs within one browser profile and origin; they cannot connect friends on separate phones.
 
