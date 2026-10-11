@@ -40,9 +40,9 @@ The existing two-pass evaluation, key-state priority and ordinal strings were al
 
 ## Final verification
 
-All listed implementation issues have been addressed. The original grading table was kept unchanged.
+All listed implementation issues have been addressed. The original grading table was kept unchanged. Final review also reproduced and fixed duplicate anonymous sign-in during overlapping StrictMode startup; concurrent clients now share one lazy SDK/identity initialization, with retry after failure.
 
-- Strict lint/typecheck/build pass. Vitest: **119 tests** across seven files, including all 14,855 codec round trips, duplicate evaluation, StrictMode stats/input, storage corruption, route restoration, PRNG/ranking symmetry, and room lifecycle.
+- Strict lint/typecheck/build pass. Vitest: **122 tests** across eight files, including all 14,855 codec round trips, duplicate evaluation, StrictMode stats/input, storage corruption, route restoration, PRNG/ranking symmetry, and room lifecycle.
 - Firebase emulator: **10 tests** pass, including actual transport create/join/ready/full countdown/play/finish/rematch plus ownership, no enumeration, capacity, malformed fields, timing, refresh, forfeit and cleanup.
 - Browser: existing modes checked at **320×740, 360×740 and 1280×900**; real two-tab one-minute match, same sequence/result/reason, live grids, refresh, rematch, all three duration rooms, third-player rejection, lobby cleanup, countdown abort, reconnect and 20-second forfeit. No application console errors/page errors observed.
 - Production preview receives a separate smoke test; mock production preview exercises complete browser flows. Missing Firebase production configuration displays the friendly setup message.
