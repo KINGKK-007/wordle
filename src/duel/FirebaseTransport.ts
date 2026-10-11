@@ -1,4 +1,5 @@
 import type { FirebaseOptions } from 'firebase/app';
+import type { Auth } from 'firebase/auth';
 import type { Database } from 'firebase/database';
 import {
   createProgress,
@@ -17,6 +18,38 @@ import type { DuelPlayer, DuelTransport, DurationSec, PlayerProgress, RoomState 
 import { isPlayerProgress, parseRoom } from './validation';
 
 type DatabaseSdk = typeof import('firebase/database');
+type FirebaseSdks = [typeof import('firebase/app'), typeof import('firebase/auth'), DatabaseSdk];
+let sdkInitialization: Promise<FirebaseSdks> | null = null;
+const identityInitializations = new WeakMap<Auth, Promise<string>>();
+
+function loadSdks(): Promise<FirebaseSdks> {
+  sdkInitialization ??= Promise.all([
+    import('firebase/app'),
+    import('firebase/auth'),
+    import('firebase/database'),
+  ]).catch((error: unknown) => {
+    sdkInitialization = null;
+    throw error;
+  });
+  return sdkInitialization;
+}
+
+function initializeIdentity(auth: Auth, sdk: FirebaseSdks[1]): Promise<string> {
+  const existing = identityInitializations.get(auth);
+  if (existing) return existing;
+  // StrictMode can replace a transport while sign-in is still in flight. Both
+  // instances must wait for the same identity rather than create two users.
+  const pending = (async () => {
+    await sdk.setPersistence(auth, sdk.browserSessionPersistence);
+    await auth.authStateReady();
+    return auth.currentUser?.uid ?? (await sdk.signInAnonymously(auth)).user.uid;
+  })().catch((error: unknown) => {
+    identityInitializations.delete(auth);
+    throw error;
+  });
+  identityInitializations.set(auth, pending);
+  return pending;
+}
 
 /** Modular Firebase SDK is imported only when a player enters Duel. */
 export class FirebaseTransport implements DuelTransport {
@@ -43,19 +76,13 @@ export class FirebaseTransport implements DuelTransport {
   }
 
   private async initialize(): Promise<{ uid: string }> {
-    const [appSdk, authSdk, databaseSdk] = await Promise.all([
-      import('firebase/app'),
-      import('firebase/auth'),
-      import('firebase/database'),
-    ]);
+    const [appSdk, authSdk, databaseSdk] = await loadSdks();
     const app =
       appSdk.getApps().find((candidate) => candidate.name === 'custom-wordle-duel') ??
       appSdk.initializeApp(this.config, 'custom-wordle-duel');
     const auth = authSdk.getAuth(app);
     // Session persistence survives refresh while keeping two testing tabs independent.
-    await authSdk.setPersistence(auth, authSdk.browserSessionPersistence);
-    await auth.authStateReady();
-    this.uid = auth.currentUser?.uid ?? (await authSdk.signInAnonymously(auth)).user.uid;
+    this.uid = await initializeIdentity(auth, authSdk);
     this.database = databaseSdk.getDatabase(app);
     this.sdk = databaseSdk;
     this.cleanup.add(
