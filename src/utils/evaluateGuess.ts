@@ -27,10 +27,12 @@ export interface EvaluatedLetter {
  *            B(3) → B in remaining? no (already used) → absent
  */
 export function evaluateGuess(guess: string, answer: string): EvaluatedLetter[] {
-  const result: EvaluatedLetter[] = Array(5).fill(null).map((_, i) => ({
-    letter: guess[i],
-    state: 'absent' as LetterState,
-  }));
+  const result: EvaluatedLetter[] = Array(5)
+    .fill(null)
+    .map((_, i) => ({
+      letter: guess[i],
+      state: 'absent' as LetterState,
+    }));
 
   // Count remaining letters in answer (for pass 2)
   const answerLetterCount: Record<string, number> = {};
@@ -64,7 +66,7 @@ export function evaluateGuess(guess: string, answer: string): EvaluatedLetter[] 
  */
 export function getBestLetterState(
   letter: string,
-  evaluatedRows: EvaluatedLetter[][]
+  evaluatedRows: EvaluatedLetter[][],
 ): LetterState | undefined {
   let best: LetterState | undefined;
   for (const row of evaluatedRows) {

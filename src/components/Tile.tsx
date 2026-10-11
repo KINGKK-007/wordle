@@ -20,7 +20,7 @@ interface TileProps {
 const FLIP_COLOR_VAR: Record<string, string> = {
   correct: 'var(--correct)',
   present: 'var(--present)',
-  absent:  'var(--absent)',
+  absent: 'var(--absent)',
 };
 
 export const Tile: React.FC<TileProps> = ({
@@ -44,14 +44,16 @@ export const Tile: React.FC<TileProps> = ({
     // Static evaluated colour classes – ONLY after flip completes
     !isFlipping && state === 'correct' ? 'tile--correct' : '',
     !isFlipping && state === 'present' ? 'tile--present' : '',
-    !isFlipping && state === 'absent'  ? 'tile--absent'  : '',
+    !isFlipping && state === 'absent' ? 'tile--absent' : '',
 
     // Flip animation applied via animations.css (.tile--flipping)
     isFlipping ? 'tile--flipping' : '',
 
     // Win-bounce
     isBouncing ? 'tile--bounce' : '',
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   // Build inline style — CSS custom properties used by keyframe animations
   const tileStyle: React.CSSProperties = {};
@@ -59,10 +61,12 @@ export const Tile: React.FC<TileProps> = ({
   if (isFlipping) {
     // --tile-flip-color : resolved colour value used by flip-tile-color keyframe
     // --flip-delay      : per-tile stagger so tiles flip one by one
-    (tileStyle as Record<string, string>)['--tile-flip-color'] =
-      flipColor ? FLIP_COLOR_VAR[flipColor] : 'var(--absent)';
+    (tileStyle as Record<string, string>)['--tile-flip-color'] = flipColor
+      ? FLIP_COLOR_VAR[flipColor]
+      : 'var(--absent)';
     (tileStyle as Record<string, string>)['--flip-delay'] = `${flipDelay}ms`;
-    (tileStyle as Record<string, string>)['--tile-flip-text'] = `var(--${flipColor ?? 'absent'}-text)`;
+    (tileStyle as Record<string, string>)['--tile-flip-text'] =
+      `var(--${flipColor ?? 'absent'}-text)`;
     (tileStyle as Record<string, string>)['--flip-duration'] = `${flipDurationMs}ms`;
     (tileStyle as Record<string, string>)['--flip-midpoint'] = `${flipDurationMs / 2}ms`;
   }
@@ -78,12 +82,12 @@ export const Tile: React.FC<TileProps> = ({
       className={tileClass}
       style={tileStyle}
       role="gridcell"
-      aria-label={letter ? `${letter.toUpperCase()}, ${state === 'tbd' ? 'not evaluated' : state}` : 'Empty'}
+      aria-label={
+        letter ? `${letter.toUpperCase()}, ${state === 'tbd' ? 'not evaluated' : state}` : 'Empty'
+      }
       data-state={state}
     >
-      <div className="tile__inner">
-        {letter?.toUpperCase()}
-      </div>
+      <div className="tile__inner">{letter?.toUpperCase()}</div>
     </div>
   );
 };

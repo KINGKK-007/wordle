@@ -80,7 +80,8 @@ export interface DuelTransport {
   dispose(): void;
 }
 
-export type DuelErrorCode = 'NOT_FOUND' | 'ROOM_FULL' | 'ALREADY_STARTED' | 'EXPIRED' | 'CONFIGURATION' | 'OFFLINE';
+export type DuelErrorCode =
+  'NOT_FOUND' | 'ROOM_FULL' | 'ALREADY_STARTED' | 'EXPIRED' | 'CONFIGURATION' | 'OFFLINE';
 
 export class DuelError extends Error {
   readonly code: DuelErrorCode;

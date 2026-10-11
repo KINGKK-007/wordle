@@ -289,8 +289,8 @@ export function DuelScreen({
             return;
           }
           setRoom(snapshot);
-        // React immediately to readiness and presence; the interval also recovers missed ticks.
-        void transport.reconcileRoom(code).catch(() => {});
+          // React immediately to readiness and presence; the interval also recovers missed ticks.
+          void transport.reconcileRoom(code).catch(() => {});
         });
       })
       .catch((cause) => {

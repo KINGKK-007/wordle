@@ -9,16 +9,36 @@ export interface GameStats {
   distribution: number[];
 }
 
-interface StoredStats extends GameStats { completedGameIds: string[] }
+interface StoredStats extends GameStats {
+  completedGameIds: string[];
+}
 const memoryStats = new Map<SoloMode, StoredStats>();
-const freshStats = (): StoredStats => ({ played: 0, wins: 0, currentStreak: 0, maxStreak: 0, distribution: [0, 0, 0, 0, 0, 0], completedGameIds: [] });
-const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const freshStats = (): StoredStats => ({
+  played: 0,
+  wins: 0,
+  currentStreak: 0,
+  maxStreak: 0,
+  distribution: [0, 0, 0, 0, 0, 0],
+  completedGameIds: [],
+});
+const isCount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 
 export function isGameStats(value: unknown): value is GameStats {
-  return isRecord(value) && isCount(value.played) && isCount(value.wins) && value.wins <= value.played &&
-    isCount(value.currentStreak) && isCount(value.maxStreak) && value.currentStreak <= value.maxStreak && value.maxStreak <= value.wins &&
-    Array.isArray(value.distribution) && value.distribution.length === 6 && value.distribution.every(isCount) &&
-    value.distribution.reduce((sum: number, count: number) => sum + count, 0) === value.wins;
+  return (
+    isRecord(value) &&
+    isCount(value.played) &&
+    isCount(value.wins) &&
+    value.wins <= value.played &&
+    isCount(value.currentStreak) &&
+    isCount(value.maxStreak) &&
+    value.currentStreak <= value.maxStreak &&
+    value.maxStreak <= value.wins &&
+    Array.isArray(value.distribution) &&
+    value.distribution.length === 6 &&
+    value.distribution.every(isCount) &&
+    value.distribution.reduce((sum: number, count: number) => sum + count, 0) === value.wins
+  );
 }
 
 function readStats(mode: SoloMode): StoredStats {
@@ -28,20 +48,35 @@ function readStats(mode: SoloMode): StoredStats {
   if (unsaved) return unsaved;
   const value = readJson(`custom-wordle-stats-${mode}`, isGameStats);
   if (!value) return freshStats();
-  const ids = isRecord(value) && Array.isArray(value.completedGameIds) && value.completedGameIds.every(id => typeof id === 'string')
-    ? value.completedGameIds as string[] : [];
+  const ids =
+    isRecord(value) &&
+    Array.isArray(value.completedGameIds) &&
+    value.completedGameIds.every((id) => typeof id === 'string')
+      ? (value.completedGameIds as string[])
+      : [];
   return { ...value, distribution: [...value.distribution], completedGameIds: ids };
 }
 
 export function loadStats(mode: SoloMode): GameStats {
   const stats = readStats(mode);
-  return { played: stats.played, wins: stats.wins, currentStreak: stats.currentStreak, maxStreak: stats.maxStreak, distribution: [...stats.distribution] };
+  return {
+    played: stats.played,
+    wins: stats.wins,
+    currentStreak: stats.currentStreak,
+    maxStreak: stats.maxStreak,
+    distribution: [...stats.distribution],
+  };
 }
 
 export function saveStats(mode: SoloMode, stats: GameStats): void {
   if (!isGameStats(stats)) return;
-  const stored = { ...stats, distribution: [...stats.distribution], completedGameIds: readStats(mode).completedGameIds };
-  if (!writeStorage(`custom-wordle-stats-${mode}`, JSON.stringify(stored))) memoryStats.set(mode, stored);
+  const stored = {
+    ...stats,
+    distribution: [...stats.distribution],
+    completedGameIds: readStats(mode).completedGameIds,
+  };
+  if (!writeStorage(`custom-wordle-stats-${mode}`, JSON.stringify(stored)))
+    memoryStats.set(mode, stored);
   else memoryStats.delete(mode);
 }
 
@@ -60,7 +95,8 @@ function record(mode: SoloMode, guessCount: number | null, gameId?: string): Gam
     distribution,
     completedGameIds: gameId ? [...previous.completedGameIds, gameId] : previous.completedGameIds,
   };
-  if (!writeStorage(`custom-wordle-stats-${mode}`, JSON.stringify(updated))) memoryStats.set(mode, updated);
+  if (!writeStorage(`custom-wordle-stats-${mode}`, JSON.stringify(updated)))
+    memoryStats.set(mode, updated);
   else memoryStats.delete(mode);
   return { ...updated, distribution: [...updated.distribution] };
 }

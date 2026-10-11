@@ -25,47 +25,49 @@ export const Row: React.FC<RowProps> = ({
   flipDurationMs = 500,
   bounceDurationMs = 1000,
 }) => {
-  const tiles = Array(5).fill(null).map((_, i) => {
-    let letter: string | undefined;
-    let state: LetterState = 'empty';
-    let flipColor: 'correct' | 'present' | 'absent' | undefined;
+  const tiles = Array(5)
+    .fill(null)
+    .map((_, i) => {
+      let letter: string | undefined;
+      let state: LetterState = 'empty';
+      let flipColor: 'correct' | 'present' | 'absent' | undefined;
 
-    if (evaluated) {
-      letter = evaluated[i]?.letter;
-      const evalState = evaluated[i]?.state ?? 'empty';
+      if (evaluated) {
+        letter = evaluated[i]?.letter;
+        const evalState = evaluated[i]?.state ?? 'empty';
 
-      if (isFlipping) {
-        // Tile looks "filled" at the start of the flip; color appears at midpoint
-        state = 'tbd';
-        // flipColor drives the CSS variable used by the animation keyframe
-        if (evalState === 'correct' || evalState === 'present' || evalState === 'absent') {
-          flipColor = evalState;
+        if (isFlipping) {
+          // Tile looks "filled" at the start of the flip; color appears at midpoint
+          state = 'tbd';
+          // flipColor drives the CSS variable used by the animation keyframe
+          if (evalState === 'correct' || evalState === 'present' || evalState === 'absent') {
+            flipColor = evalState;
+          }
+        } else {
+          // Flip is done — show the permanent evaluated colour
+          state = evalState;
         }
-      } else {
-        // Flip is done — show the permanent evaluated colour
-        state = evalState;
+      } else if (isCurrentRow && letters[i]) {
+        letter = letters[i];
+        state = 'tbd';
       }
-    } else if (isCurrentRow && letters[i]) {
-      letter = letters[i];
-      state = 'tbd';
-    }
-    // else: empty row tile — state stays 'empty', no colour
+      // else: empty row tile — state stays 'empty', no colour
 
-    return (
-      <Tile
-        key={i}
-        letter={letter}
-        state={state}
-        flipColor={flipColor}
-        isFlipping={isFlipping && !!evaluated}
-        flipDelay={i * flipStaggerMs}
-        flipDurationMs={flipDurationMs}
-        bounceDurationMs={bounceDurationMs}
-        isBouncing={isBouncing && !!evaluated}
-        bounceDelay={i * 100}
-      />
-    );
-  });
+      return (
+        <Tile
+          key={i}
+          letter={letter}
+          state={state}
+          flipColor={flipColor}
+          isFlipping={isFlipping && !!evaluated}
+          flipDelay={i * flipStaggerMs}
+          flipDurationMs={flipDurationMs}
+          bounceDurationMs={bounceDurationMs}
+          isBouncing={isBouncing && !!evaluated}
+          bounceDelay={i * 100}
+        />
+      );
+    });
 
   return (
     <div
@@ -73,10 +75,13 @@ export const Row: React.FC<RowProps> = ({
       role="row"
       aria-label={
         evaluated
-          ? `Guess: ${evaluated.map(e => e.letter).join('').toUpperCase()}`
+          ? `Guess: ${evaluated
+              .map((e) => e.letter)
+              .join('')
+              .toUpperCase()}`
           : isCurrentRow
-          ? 'Current guess'
-          : 'Empty row'
+            ? 'Current guess'
+            : 'Empty row'
       }
     >
       {tiles}

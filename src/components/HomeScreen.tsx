@@ -37,7 +37,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           aria-label="Unlimited Mode: play solo with random words"
         >
           <span className="mode-card__badge">Solo</span>
-          <span className="mode-card__icon" aria-hidden="true">♾️</span>
+          <span className="mode-card__icon" aria-hidden="true">
+            ♾️
+          </span>
           <div className="mode-card__title">Unlimited Mode</div>
           <div className="mode-card__desc">
             Play endlessly with random words. Track your stats, streaks, and guess distribution.
@@ -51,17 +53,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           aria-label="2-Player Mode: set a word for a friend to guess"
         >
           <span className="mode-card__badge">2 Players</span>
-          <span className="mode-card__icon" aria-hidden="true">🤝</span>
+          <span className="mode-card__icon" aria-hidden="true">
+            🤝
+          </span>
           <div className="mode-card__title">2-Player Mode</div>
           <div className="mode-card__desc">
-            Set a secret word and share a challenge link or code. Your friend guesses it — Wordle-style.
+            Set a secret word and share a challenge link or code. Your friend guesses it —
+            Wordle-style.
           </div>
         </button>
-        <button className="mode-card mode-card--duel" onClick={onDuel} id="duel-mode-btn" aria-label="Duel (1v1): race a friend in real time">
+        <button
+          className="mode-card mode-card--duel"
+          onClick={onDuel}
+          id="duel-mode-btn"
+          aria-label="Duel (1v1): race a friend in real time"
+        >
           <span className="mode-card__badge">Live · 2 Players</span>
-          <span className="mode-card__icon" aria-hidden="true">⚔️</span>
+          <span className="mode-card__icon" aria-hidden="true">
+            ⚔️
+          </span>
           <div className="mode-card__title">Duel (1v1)</div>
-          <div className="mode-card__desc">Same words. Same clock. Race a friend for 1, 2, or 5 minutes.</div>
+          <div className="mode-card__desc">
+            Same words. Same clock. Race a friend for 1, 2, or 5 minutes.
+          </div>
         </button>
       </div>
 

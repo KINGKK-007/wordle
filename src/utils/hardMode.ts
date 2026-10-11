@@ -19,8 +19,10 @@ export function getHardModeError(guess: string, rows: EvaluatedLetter[][]): stri
     }
   }
   for (const [letter, count] of Object.entries(requiredCounts)) {
-    if ([...guess].filter(value => value === letter).length < count) {
-      return count === 1 ? `Guess must contain ${letter.toUpperCase()}` : `Guess must contain ${count} ${letter.toUpperCase()}s`;
+    if ([...guess].filter((value) => value === letter).length < count) {
+      return count === 1
+        ? `Guess must contain ${letter.toUpperCase()}`
+        : `Guess must contain ${count} ${letter.toUpperCase()}s`;
     }
   }
   return null;

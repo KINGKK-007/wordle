@@ -35,14 +35,12 @@ for (const width of [320, 360, 1280]) {
     await expect(page.locator('.row').first()).toHaveText('CRANE');
     await page.reload();
     await expect(page.locator('.row').first()).toHaveText('CRANE');
-    const bounds = await page
-      .locator('.keyboard button')
-      .evaluateAll((keys) =>
-        keys.map((key) => ({
-          left: key.getBoundingClientRect().left,
-          right: key.getBoundingClientRect().right,
-        })),
-      );
+    const bounds = await page.locator('.keyboard button').evaluateAll((keys) =>
+      keys.map((key) => ({
+        left: key.getBoundingClientRect().left,
+        right: key.getBoundingClientRect().right,
+      })),
+    );
     expect(bounds.every((bound) => bound.left >= 0 && bound.right <= width)).toBe(true);
     await page.getByRole('button', { name: 'How to play', exact: true }).click();
     await page.keyboard.type('zzzzz');

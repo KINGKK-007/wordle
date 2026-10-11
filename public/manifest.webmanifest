@@ -1,0 +1,24 @@
+{
+  "name": "Custom Wordle",
+  "short_name": "Wordle",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#121213",
+  "theme_color": "#121213",
+  "description": "Unlimited Wordle, custom challenges and realtime 1v1 Duels.",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

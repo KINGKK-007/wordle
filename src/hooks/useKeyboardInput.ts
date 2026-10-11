@@ -2,10 +2,16 @@ import { useEffect, useRef } from 'react';
 
 /** Shared by the setter, solo board and Duel: never steal keys from a dialog or form. */
 export function shouldIgnoreKeyboardEvent(event: KeyboardEvent): boolean {
-  if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing || event.repeat) return true;
+  if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing || event.repeat)
+    return true;
   if (document.querySelector('[role="dialog"][aria-modal="true"]')) return true;
   const target = event.target instanceof Element ? event.target : document.activeElement;
-  if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return true;
+  if (
+    target?.closest(
+      'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]',
+    )
+  )
+    return true;
   // Focus returns to the dialog's opener. Letters must still reach the board;
   // Enter and Space retain the focused button/link's native activation behavior.
   return (event.key === 'Enter' || event.key === ' ') && !!target?.closest('button, a');

@@ -3,9 +3,9 @@ import { Key } from './Key';
 import type { LetterState } from '../utils/evaluateGuess';
 
 const ROWS = [
-  ['Q','W','E','R','T','Y','U','I','O','P'],
-  ['spacer','A','S','D','F','G','H','J','K','L','spacer'],
-  ['Enter','Z','X','C','V','B','N','M','Backspace'],
+  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+  ['spacer', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'spacer'],
+  ['Enter', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Backspace'],
 ];
 
 interface KeyboardProps {

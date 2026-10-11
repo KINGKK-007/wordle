@@ -12,8 +12,8 @@ interface ResultModalProps {
   evaluatedRows: EvaluatedLetter[][];
   mode: 'unlimited' | '2player';
   highContrast: boolean;
-  onPlayAgain?: () => void;    // Unlimited mode
-  onSetNewWord?: () => void;   // 2P mode
+  onPlayAgain?: () => void; // Unlimited mode
+  onSetNewWord?: () => void; // 2P mode
   onBackToMenu: () => void;
   onShowToast: (msg: string) => void;
 }
@@ -73,27 +73,55 @@ export const ResultModal: React.FC<ResultModalProps> = ({
       {/* Actions */}
       <div className="result-modal__actions">
         <button className="btn btn--secondary btn--full" onClick={handleShare}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-            <polyline points="16 6 12 2 8 6"/>
-            <line x1="12" y1="2" x2="12" y2="15"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+            <polyline points="16 6 12 2 8 6" />
+            <line x1="12" y1="2" x2="12" y2="15" />
           </svg>
           Share Result
         </button>
 
         {mode === 'unlimited' && onPlayAgain && (
-          <button className="btn btn--primary btn--full" onClick={() => { onClose(); onPlayAgain(); }}>
+          <button
+            className="btn btn--primary btn--full"
+            onClick={() => {
+              onClose();
+              onPlayAgain();
+            }}
+          >
             Play Again
           </button>
         )}
 
         {mode === '2player' && onSetNewWord && (
-          <button className="btn btn--primary btn--full" onClick={() => { onClose(); onSetNewWord(); }}>
+          <button
+            className="btn btn--primary btn--full"
+            onClick={() => {
+              onClose();
+              onSetNewWord();
+            }}
+          >
             Set a New Word
           </button>
         )}
 
-        <button className="btn btn--outline btn--full" onClick={() => { onClose(); onBackToMenu(); }}>
+        <button
+          className="btn btn--outline btn--full"
+          onClick={() => {
+            onClose();
+            onBackToMenu();
+          }}
+        >
           Back to Menu
         </button>
       </div>

@@ -19,9 +19,24 @@ import { loadSavedGame, SOLO_GAME_STORAGE_KEY } from './utils/gamePersistence';
 import { readStorage, writeStorage, removeStorage } from './utils/storage';
 
 const DuelScreen = lazy(() => import('./duel/DuelScreen'));
-type Screen = 'home' | 'unlimited' | 'set-word' | 'share-link' | 'enter-code' | 'two-player-game' | 'duel' | 'error';
-interface Route { screen: Screen; word?: string; code?: string }
-interface Settings { hardMode: boolean; highContrast: boolean }
+type Screen =
+  | 'home'
+  | 'unlimited'
+  | 'set-word'
+  | 'share-link'
+  | 'enter-code'
+  | 'two-player-game'
+  | 'duel'
+  | 'error';
+interface Route {
+  screen: Screen;
+  word?: string;
+  code?: string;
+}
+interface Settings {
+  hardMode: boolean;
+  highContrast: boolean;
+}
 const HELP_SHOWN_KEY = 'custom-wordle-help-shown';
 const LAST_ANSWER_KEY = 'custom-wordle-last-answer';
 
@@ -30,10 +45,14 @@ function readRoute(): Route {
   if (hash.startsWith('#/play')) {
     const params = new URLSearchParams(hash.split('?')[1] ?? '');
     const payload = params.get('w');
-    const word = hash.startsWith('#/play?') && params.getAll('w').length === 1 && payload ? decodeWord(payload) : null;
+    const word =
+      hash.startsWith('#/play?') && params.getAll('w').length === 1 && payload
+        ? decodeWord(payload)
+        : null;
     return word ? { screen: 'two-player-game', word } : { screen: 'error' };
   }
-  if (hash === '#/duel' || hash.startsWith('#/duel/')) return { screen: 'duel', code: hash.slice(7).toUpperCase() || undefined };
+  if (hash === '#/duel' || hash.startsWith('#/duel/'))
+    return { screen: 'duel', code: hash.slice(7).toUpperCase() || undefined };
   if (hash === '#/unlimited') return { screen: 'unlimited' };
   if (hash === '#/set') return { screen: 'set-word' };
   if (hash === '#/code') return { screen: 'enter-code' };
@@ -42,25 +61,33 @@ function readRoute(): Route {
 
 function pickAnswer(exclude = readStorage(LAST_ANSWER_KEY)): string {
   const previous = exclude;
-  const pool = ANSWER_LIST.filter(word => word !== previous);
+  const pool = ANSWER_LIST.filter((word) => word !== previous);
   const word = pool[Math.floor(Math.random() * pool.length)]!;
   return word;
 }
 
 function resumeOrPickAnswer(): string {
   const saved = loadSavedGame();
-  if (saved && !saved.guesses.includes(saved.answer) && saved.guesses.length < 6) return saved.answer;
+  if (saved && !saved.guesses.includes(saved.answer) && saved.guesses.length < 6)
+    return saved.answer;
   removeStorage(SOLO_GAME_STORAGE_KEY);
   return pickAnswer();
 }
 
 export default function App() {
   const { toasts, showToast } = useToast();
-  const [settings, setSettings] = useLocalStorage<Settings>('custom-wordle-settings', { hardMode: false, highContrast: false });
+  const [settings, setSettings] = useLocalStorage<Settings>('custom-wordle-settings', {
+    hardMode: false,
+    highContrast: false,
+  });
   const [route, setRoute] = useState<Route>(readRoute);
-  const [currentAnswer, setCurrentAnswer] = useState(() => readRoute().screen === 'unlimited' ? (loadSavedGame()?.answer ?? pickAnswer()) : '');
+  const [currentAnswer, setCurrentAnswer] = useState(() =>
+    readRoute().screen === 'unlimited' ? (loadSavedGame()?.answer ?? pickAnswer()) : '',
+  );
   const [twoPlayerWord, setTwoPlayerWord] = useState('');
-  const [showHelp, setShowHelp] = useState(() => readRoute().screen === 'home' && readStorage(HELP_SHOWN_KEY) !== '1');
+  const [showHelp, setShowHelp] = useState(
+    () => readRoute().screen === 'home' && readStorage(HELP_SHOWN_KEY) !== '1',
+  );
   const [globalModal, setGlobalModal] = useState<'stats' | 'settings' | null>(null);
   const [gameKey, setGameKey] = useState(0);
   const isGame = route.screen === 'unlimited' || route.screen === 'two-player-game';
@@ -71,44 +98,156 @@ export default function App() {
       const next = readRoute();
       if (next.screen === 'unlimited') setCurrentAnswer(resumeOrPickAnswer());
       setRoute(next);
-      setGameKey(key => key + 1);
+      setGameKey((key) => key + 1);
       setShowHelp(false);
       setGlobalModal(null);
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
-  useEffect(() => { if (showHelp) writeStorage(HELP_SHOWN_KEY, '1'); }, [showHelp]);
-  useEffect(() => { if (currentAnswer) writeStorage(LAST_ANSWER_KEY, currentAnswer); }, [currentAnswer]);
-  useEffect(() => { document.getElementById('root')?.classList.toggle('high-contrast', settings.highContrast); }, [settings.highContrast]);
+  useEffect(() => {
+    if (showHelp) writeStorage(HELP_SHOWN_KEY, '1');
+  }, [showHelp]);
+  useEffect(() => {
+    if (currentAnswer) writeStorage(LAST_ANSWER_KEY, currentAnswer);
+  }, [currentAnswer]);
+  useEffect(() => {
+    document.getElementById('root')?.classList.toggle('high-contrast', settings.highContrast);
+  }, [settings.highContrast]);
 
-  const toggleSetting = useCallback((key: keyof Settings) => setSettings(previous => ({ ...previous, [key]: !previous[key] })), [setSettings]);
-  const dispatch = (action: string) => window.dispatchEvent(new CustomEvent('header-action', { detail: { action } }));
-  const goHome = () => { window.location.hash = ''; setRoute({ screen: 'home' }); };
-  const navigate = (hash: string) => { window.location.hash = hash; };
+  const toggleSetting = useCallback(
+    (key: keyof Settings) => setSettings((previous) => ({ ...previous, [key]: !previous[key] })),
+    [setSettings],
+  );
+  const dispatch = (action: string) =>
+    window.dispatchEvent(new CustomEvent('header-action', { detail: { action } }));
+  const goHome = () => {
+    window.location.hash = '';
+    setRoute({ screen: 'home' });
+  };
+  const navigate = (hash: string) => {
+    window.location.hash = hash;
+  };
   const playAgain = () => {
     removeStorage(SOLO_GAME_STORAGE_KEY);
     setCurrentAnswer(pickAnswer(currentAnswer));
-    setGameKey(key => key + 1);
+    setGameKey((key) => key + 1);
   };
-  const subtitle = isDuel ? 'Duel' : route.screen === 'unlimited' ? 'Unlimited' : ['set-word', 'share-link', 'two-player-game'].includes(route.screen) ? '2-Player' : undefined;
+  const subtitle = isDuel
+    ? 'Duel'
+    : route.screen === 'unlimited'
+      ? 'Unlimited'
+      : ['set-word', 'share-link', 'two-player-game'].includes(route.screen)
+        ? '2-Player'
+        : undefined;
 
-  return <div className="app">
-    <Header onMenu={() => isDuel ? dispatch('menu') : goHome()} subtitle={subtitle}
-      onHelp={() => isGame || isDuel ? dispatch('help') : setShowHelp(true)}
-      onStats={() => isGame || isDuel ? dispatch('stats') : setGlobalModal('stats')}
-      onSettings={() => isGame || isDuel ? dispatch('settings') : setGlobalModal('settings')} />
-    <ToastContainer toasts={toasts} />
-    {route.screen === 'home' && <HomeScreen onUnlimited={() => navigate('#/unlimited')} onTwoPlayer={() => navigate('#/set')} onEnterCode={() => navigate('#/code')} onDuel={() => navigate('#/duel')} />}
-    {isDuel && <Suspense fallback={<main className="error-screen" role="status">Loading Duel…</main>}><DuelScreen code={route.code} settings={settings} onSettingsChange={toggleSetting} onToast={showToast} onBackToMenu={goHome} /></Suspense>}
-    {route.screen === 'unlimited' && currentAnswer && <GameScreen key={`unlimited-${gameKey}`} answer={currentAnswer} mode="unlimited" settings={settings} onSettingsChange={toggleSetting} onToast={showToast} onPlayAgain={playAgain} onBackToMenu={goHome} />}
-    {route.screen === 'set-word' && <SetWordScreen onWordSet={word => { setTwoPlayerWord(word); setRoute({ screen: 'share-link' }); }} onToast={showToast} />}
-    {route.screen === 'share-link' && twoPlayerWord && <ShareLinkScreen word={twoPlayerWord} onToast={showToast} onBackToMenu={goHome} />}
-    {route.screen === 'enter-code' && <CodeInputScreen onCodeEntered={word => { setRoute({ screen: 'two-player-game', word }); setGameKey(key => key + 1); }} onToast={showToast} onCancel={goHome} />}
-    {route.screen === 'two-player-game' && route.word && <GameScreen key={`challenge-${gameKey}`} answer={route.word} mode="2player" settings={settings} onSettingsChange={toggleSetting} onToast={showToast} onSetNewWord={() => navigate('#/set')} onBackToMenu={goHome} />}
-    {route.screen === 'error' && <main className="error-screen"><h2>Invalid Challenge</h2><p className="error-screen__desc">This challenge link is invalid. Ask your friend for a new link.</p><button className="btn btn--primary" onClick={goHome}>Back to Menu</button></main>}
-    <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
-    <SettingsModal isOpen={globalModal === 'settings'} onClose={() => setGlobalModal(null)} settings={settings} onToggle={toggleSetting} hasStarted={false} />
-    <StatsModal isOpen={globalModal === 'stats'} onClose={() => setGlobalModal(null)} stats={loadStats('unlimited')} mode="unlimited" gameStatus="playing" />
-  </div>;
+  return (
+    <div className="app">
+      <Header
+        onMenu={() => (isDuel ? dispatch('menu') : goHome())}
+        subtitle={subtitle}
+        onHelp={() => (isGame || isDuel ? dispatch('help') : setShowHelp(true))}
+        onStats={() => (isGame || isDuel ? dispatch('stats') : setGlobalModal('stats'))}
+        onSettings={() => (isGame || isDuel ? dispatch('settings') : setGlobalModal('settings'))}
+      />
+      <ToastContainer toasts={toasts} />
+      {route.screen === 'home' && (
+        <HomeScreen
+          onUnlimited={() => navigate('#/unlimited')}
+          onTwoPlayer={() => navigate('#/set')}
+          onEnterCode={() => navigate('#/code')}
+          onDuel={() => navigate('#/duel')}
+        />
+      )}
+      {isDuel && (
+        <Suspense
+          fallback={
+            <main className="error-screen" role="status">
+              Loading Duel…
+            </main>
+          }
+        >
+          <DuelScreen
+            code={route.code}
+            settings={settings}
+            onSettingsChange={toggleSetting}
+            onToast={showToast}
+            onBackToMenu={goHome}
+          />
+        </Suspense>
+      )}
+      {route.screen === 'unlimited' && currentAnswer && (
+        <GameScreen
+          key={`unlimited-${gameKey}`}
+          answer={currentAnswer}
+          mode="unlimited"
+          settings={settings}
+          onSettingsChange={toggleSetting}
+          onToast={showToast}
+          onPlayAgain={playAgain}
+          onBackToMenu={goHome}
+        />
+      )}
+      {route.screen === 'set-word' && (
+        <SetWordScreen
+          onWordSet={(word) => {
+            setTwoPlayerWord(word);
+            setRoute({ screen: 'share-link' });
+          }}
+          onToast={showToast}
+        />
+      )}
+      {route.screen === 'share-link' && twoPlayerWord && (
+        <ShareLinkScreen word={twoPlayerWord} onToast={showToast} onBackToMenu={goHome} />
+      )}
+      {route.screen === 'enter-code' && (
+        <CodeInputScreen
+          onCodeEntered={(word) => {
+            setRoute({ screen: 'two-player-game', word });
+            setGameKey((key) => key + 1);
+          }}
+          onToast={showToast}
+          onCancel={goHome}
+        />
+      )}
+      {route.screen === 'two-player-game' && route.word && (
+        <GameScreen
+          key={`challenge-${gameKey}`}
+          answer={route.word}
+          mode="2player"
+          settings={settings}
+          onSettingsChange={toggleSetting}
+          onToast={showToast}
+          onSetNewWord={() => navigate('#/set')}
+          onBackToMenu={goHome}
+        />
+      )}
+      {route.screen === 'error' && (
+        <main className="error-screen">
+          <h2>Invalid Challenge</h2>
+          <p className="error-screen__desc">
+            This challenge link is invalid. Ask your friend for a new link.
+          </p>
+          <button className="btn btn--primary" onClick={goHome}>
+            Back to Menu
+          </button>
+        </main>
+      )}
+      <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <SettingsModal
+        isOpen={globalModal === 'settings'}
+        onClose={() => setGlobalModal(null)}
+        settings={settings}
+        onToggle={toggleSetting}
+        hasStarted={false}
+      />
+      <StatsModal
+        isOpen={globalModal === 'stats'}
+        onClose={() => setGlobalModal(null)}
+        stats={loadStats('unlimited')}
+        mode="unlimited"
+        gameStatus="playing"
+      />
+    </div>
+  );
 }

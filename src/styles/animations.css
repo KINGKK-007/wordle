@@ -4,20 +4,40 @@
 
 /* Letter pop on type */
 @keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.12); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Row shake on invalid guess */
 @keyframes shake {
-  0%   { transform: translateX(0); }
-  10%  { transform: translateX(-4px); }
-  30%  { transform: translateX(4px); }
-  50%  { transform: translateX(-3px); }
-  70%  { transform: translateX(3px); }
-  90%  { transform: translateX(-1px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+  10% {
+    transform: translateX(-4px);
+  }
+  30% {
+    transform: translateX(4px);
+  }
+  50% {
+    transform: translateX(-3px);
+  }
+  70% {
+    transform: translateX(3px);
+  }
+  90% {
+    transform: translateX(-1px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 /* ── Tile flip reveal ─────────────────────────────────────────────────────────
@@ -43,12 +63,20 @@
 
 @keyframes flip-tile-rotate {
   /* face → edge */
-  0%   { transform: perspective(250px) rotateX(0deg); }
-  50%  { transform: perspective(250px) rotateX(-90deg); }
+  0% {
+    transform: perspective(250px) rotateX(0deg);
+  }
+  50% {
+    transform: perspective(250px) rotateX(-90deg);
+  }
   /* invisible at edge — jump to other side without being seen */
-  51%  { transform: perspective(250px) rotateX(90deg); }
+  51% {
+    transform: perspective(250px) rotateX(90deg);
+  }
   /* edge → back face */
-  100% { transform: perspective(250px) rotateX(0deg); }
+  100% {
+    transform: perspective(250px) rotateX(0deg);
+  }
 }
 
 @keyframes flip-tile-color {
@@ -59,7 +87,7 @@
   }
   to {
     background-color: var(--tile-flip-color);
-    border-color:     var(--tile-flip-color);
+    border-color: var(--tile-flip-color);
     color: var(--tile-flip-text, white);
   }
 }
@@ -77,18 +105,31 @@
  */
 .tile--flipping {
   animation:
-    flip-tile-rotate  var(--flip-duration, 500ms) var(--flip-delay, 0ms)                          ease-in-out both,
-    flip-tile-color     1ms calc(var(--flip-delay, 0ms) + var(--flip-midpoint, 250ms)) step-end   both;
+    flip-tile-rotate var(--flip-duration, 500ms) var(--flip-delay, 0ms) ease-in-out both,
+    flip-tile-color 1ms calc(var(--flip-delay, 0ms) + var(--flip-midpoint, 250ms)) step-end both;
 }
 
 /* ── Win bounce ──────────────────────────────────────────────────────────── */
 @keyframes bounce {
-  0%, 20%  { transform: translateY(0); }
-  40%      { transform: translateY(-30px); }
-  50%      { transform: translateY(5px); }
-  60%      { transform: translateY(-15px); }
-  80%      { transform: translateY(2px); }
-  100%     { transform: translateY(0); }
+  0%,
+  20% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-30px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+  60% {
+    transform: translateY(-15px);
+  }
+  80% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 .tile--bounce {
@@ -97,33 +138,58 @@
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0)     scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes toast-out {
-  from { opacity: 1; transform: translateY(0)     scale(1); }
-  to   { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
 }
 
 /* ── Modal ───────────────────────────────────────────────────────────────── */
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(-20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Cursor blink ────────────────────────────────────────────────────────── */
 @keyframes blink {
-  0%, 100% { border-color: var(--text); }
-  50%      { border-color: transparent; }
+  0%,
+  100% {
+    border-color: var(--text);
+  }
+  50% {
+    border-color: transparent;
+  }
 }
 
 /* ── Reduced motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration:        0.01ms !important;
-    animation-iteration-count: 1      !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     animation-delay: 0ms !important;
-    transition-duration:       0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -3,8 +3,13 @@ import type { DuelTransport } from './types';
 
 export async function createDuelTransport(): Promise<DuelTransport> {
   const env = import.meta.env;
-  const configured = Boolean(env.VITE_FIREBASE_API_KEY && env.VITE_FIREBASE_AUTH_DOMAIN &&
-    env.VITE_FIREBASE_DATABASE_URL && env.VITE_FIREBASE_PROJECT_ID && env.VITE_FIREBASE_APP_ID);
+  const configured = Boolean(
+    env.VITE_FIREBASE_API_KEY &&
+    env.VITE_FIREBASE_AUTH_DOMAIN &&
+    env.VITE_FIREBASE_DATABASE_URL &&
+    env.VITE_FIREBASE_PROJECT_ID &&
+    env.VITE_FIREBASE_APP_ID,
+  );
   const mode = env.VITE_DUEL_TRANSPORT || (configured ? 'firebase' : env.DEV ? 'mock' : 'firebase');
   if (mode === 'mock') {
     const { MockTransport } = await import('./MockTransport');

@@ -5,7 +5,9 @@
 /* ============================================================
    RESET & BASE
    ============================================================ */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -316,7 +318,9 @@ body {
   justify-content: center;
   flex: 1;
   max-width: 43px;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
@@ -423,9 +427,17 @@ body {
   border-radius: 2px;
 }
 
-.home-tile--correct { background: var(--correct); color: var(--correct-text); }
-.home-tile--present { background: var(--present); color: var(--present-text); }
-.home-tile--absent  { background: var(--absent); }
+.home-tile--correct {
+  background: var(--correct);
+  color: var(--correct-text);
+}
+.home-tile--present {
+  background: var(--present);
+  color: var(--present-text);
+}
+.home-tile--absent {
+  background: var(--absent);
+}
 
 .home-screen__modes {
   display: flex;
@@ -442,7 +454,10 @@ body {
   padding: 24px 28px;
   cursor: pointer;
   text-align: left;
-  transition: border-color var(--transition-std), background var(--transition-std), transform var(--transition-std);
+  transition:
+    border-color var(--transition-std),
+    background var(--transition-std),
+    transform var(--transition-std);
   position: relative;
   overflow: hidden;
 }
@@ -572,7 +587,9 @@ body {
   transition: color var(--transition-fast);
 }
 
-.modal__close:hover { color: var(--text); }
+.modal__close:hover {
+  color: var(--text);
+}
 
 .modal__close:focus-visible {
   outline: 2px solid var(--text);
@@ -604,7 +621,9 @@ body {
   margin-bottom: 12px;
 }
 
-.help-text strong { color: var(--text); }
+.help-text strong {
+  color: var(--text);
+}
 
 .help-example {
   margin-bottom: 20px;
@@ -635,10 +654,24 @@ body {
   color: white;
 }
 
-.help-tile--empty { border-color: var(--tile-border-empty); color: var(--text); }
-.help-tile--correct { background: var(--correct); border-color: var(--correct); color: var(--correct-text); }
-.help-tile--present { background: var(--present); border-color: var(--present); color: var(--present-text); }
-.help-tile--absent  { background: var(--absent); border-color: var(--absent); }
+.help-tile--empty {
+  border-color: var(--tile-border-empty);
+  color: var(--text);
+}
+.help-tile--correct {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: var(--correct-text);
+}
+.help-tile--present {
+  background: var(--present);
+  border-color: var(--present);
+  color: var(--present-text);
+}
+.help-tile--absent {
+  background: var(--absent);
+  border-color: var(--absent);
+}
 
 .help-divider {
   border: none;
@@ -739,7 +772,9 @@ body {
   border-bottom: 1px solid var(--header-border);
 }
 
-.setting-row:last-child { border-bottom: none; }
+.setting-row:last-child {
+  border-bottom: none;
+}
 
 .setting-row__info {
   flex: 1;
@@ -890,7 +925,9 @@ body {
   cursor: pointer;
   font-family: var(--font-primary);
   font-weight: 700;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .toggle-visibility:hover {
@@ -970,13 +1007,17 @@ body {
   font-size: 0.9375rem;
   cursor: pointer;
   border: none;
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
   min-height: 44px;
 }
 
-.btn:active { transform: scale(0.97); }
+.btn:active {
+  transform: scale(0.97);
+}
 
 .btn:disabled {
   opacity: 0.5;
@@ -1008,7 +1049,9 @@ body {
   border-color: var(--text);
 }
 
-.btn--full { width: 100%; }
+.btn--full {
+  width: 100%;
+}
 
 .btn--sm {
   padding: 10px 18px;
@@ -1165,25 +1208,33 @@ body {
     --tile-size: 52px;
     --key-height: 52px;
   }
-  
+
   .key {
     min-width: 0;
     max-width: 43px;
     font-size: 0.75rem;
   }
-  
+
   .key--wide {
     max-width: 54px;
   }
-  
+
   .header__title {
     font-size: clamp(1.05rem, 4.5vw, 1.5rem);
     letter-spacing: 0;
   }
-  .header { padding: 0 6px; }
-  .icon-btn { padding: 4px; }
-  .header__right { gap: 0; }
-  .header__center { left: 38%; }
+  .header {
+    padding: 0 6px;
+  }
+  .icon-btn {
+    padding: 4px;
+  }
+  .header__right {
+    gap: 0;
+  }
+  .header__center {
+    left: 38%;
+  }
 }
 
 @media (max-width: 320px) {
@@ -1191,21 +1242,25 @@ body {
     --tile-size: 44px;
     --key-height: 48px;
   }
-  
+
   .key {
     min-width: 0;
     max-width: 43px;
     font-size: 0.6875rem;
   }
-  
+
   .key--wide {
     max-width: 48px;
   }
 }
 
 @media (max-width: 340px) {
-  .header__center { left: calc(50% - 44px); }
-  .header__title { font-size: .95rem; }
+  .header__center {
+    left: calc(50% - 44px);
+  }
+  .header__title {
+    font-size: 0.95rem;
+  }
 }
 
 /* Tall screens: larger board */
@@ -1221,11 +1276,11 @@ body {
     --key-height: 48px;
     --header-height: 48px;
   }
-  
+
   .board {
     max-width: 280px;
   }
-  
+
   .tile {
     font-size: 1.6rem;
   }
@@ -1233,18 +1288,40 @@ body {
 
 /* Fit the square board to the space remaining above the keyboard, including Duel HUDs. */
 @supports (width: 1cqh) {
-  .board { width: min(100%, var(--board-max-width), calc(100cqh * 5 / 6)); }
+  .board {
+    width: min(100%, var(--board-max-width), calc(100cqh * 5 / 6));
+  }
 }
 
 @media (max-height: 720px) {
-  .home-screen { justify-content: flex-start; gap: 16px; }
-  .home-screen__logo { margin-bottom: 0; }
-  .mode-card { padding: 16px 22px; }
-  .mode-card__icon { margin-bottom: 6px; }
+  .home-screen {
+    justify-content: flex-start;
+    gap: 16px;
+  }
+  .home-screen__logo {
+    margin-bottom: 0;
+  }
+  .mode-card {
+    padding: 16px 22px;
+  }
+  .mode-card__icon {
+    margin-bottom: 6px;
+  }
 }
 
-.key:disabled { cursor: default; }
-input, textarea { user-select: text; -webkit-user-select: text; }
-input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
-  outline: 2px solid var(--text); outline-offset: 3px;
+.key:disabled {
+  cursor: default;
+}
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
 }

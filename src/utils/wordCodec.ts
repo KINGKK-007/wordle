@@ -6,8 +6,14 @@ const INDEX_SALT = 0x5a7e;
 const WORD_TO_INDEX = new Map(VALID_GUESSES.map((word, index) => [word, index]));
 
 function cipher(word: string): string {
-  return btoa([...word].map((letter, index) => String.fromCharCode(letter.charCodeAt(0) ^ URL_SALT[index])).join(''))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return btoa(
+    [...word]
+      .map((letter, index) => String.fromCharCode(letter.charCodeAt(0) ^ URL_SALT[index]))
+      .join(''),
+  )
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
 /** Detects accidental changes and malformed links; obfuscation is not encryption. */
@@ -27,13 +33,24 @@ export function encodeWord(word: string): string {
 export function decodeWord(encoded: string): string | null {
   try {
     const parts = encoded.split('.');
-    const payload = parts.length === 1 ? encoded : parts.length === 3 && parts[0] === 'v2' && parts[2] === checksum(parts[1]) ? parts[1] : null;
+    const payload =
+      parts.length === 1
+        ? encoded
+        : parts.length === 3 && parts[0] === 'v2' && parts[2] === checksum(parts[1])
+          ? parts[1]
+          : null;
     if (!payload || !/^[A-Za-z0-9_-]{7}$/.test(payload)) return null;
     const bytes = atob(payload.replace(/-/g, '+').replace(/_/g, '/') + '=');
     if (bytes.length !== 5) return null;
-    const word = [...bytes].map((byte, index) => String.fromCharCode(byte.charCodeAt(0) ^ URL_SALT[index])).join('');
-    return /^[a-z]{5}$/.test(word) && VALID_GUESS_SET.has(word) && cipher(word) === payload ? word : null;
-  } catch { return null; }
+    const word = [...bytes]
+      .map((byte, index) => String.fromCharCode(byte.charCodeAt(0) ^ URL_SALT[index]))
+      .join('');
+    return /^[a-z]{5}$/.test(word) && VALID_GUESS_SET.has(word) && cipher(word) === payload
+      ? word
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export function encodeToCode(word: string): string {
@@ -41,7 +58,10 @@ export function encodeToCode(word: string): string {
   if (index === undefined) throw new RangeError('Not in word list');
   let value = index ^ INDEX_SALT;
   let code = '';
-  for (let i = 0; i < 4; i++) { code = CODE_CHARS[value & 31] + code; value >>>= 5; }
+  for (let i = 0; i < 4; i++) {
+    code = CODE_CHARS[value & 31] + code;
+    value >>>= 5;
+  }
   return code;
 }
 

@@ -32,8 +32,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {duelMode
               ? 'Hard Mode is off in Duel. Both players use the same rules.'
               : hasStarted
-              ? 'Cannot change during a game'
-              : 'Any revealed hints must be used in subsequent guesses'}
+                ? 'Cannot change during a game'
+                : 'Any revealed hints must be used in subsequent guesses'}
           </div>
         </div>
         <label className="toggle" aria-label="Toggle hard mode">
@@ -52,7 +52,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div className="setting-row">
         <div className="setting-row__info">
           <div className="setting-row__label">High Contrast Mode</div>
-          <div className="setting-row__desc">For improved color vision: orange = correct, blue = present</div>
+          <div className="setting-row__desc">
+            For improved color vision: orange = correct, blue = present
+          </div>
         </div>
         <label className="toggle" aria-label="Toggle high contrast mode">
           <input

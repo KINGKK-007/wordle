@@ -22,10 +22,17 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
   useEffect(() => {
     mountedRef.current = true;
     const timers = timersRef.current;
-    return () => { mountedRef.current = false; for (const timer of timers) clearTimeout(timer); timers.clear(); };
+    return () => {
+      mountedRef.current = false;
+      for (const timer of timers) clearTimeout(timer);
+      timers.clear();
+    };
   }, []);
   const later = (callback: () => void) => {
-    const timer = setTimeout(() => { timersRef.current.delete(timer); callback(); }, 2000);
+    const timer = setTimeout(() => {
+      timersRef.current.delete(timer);
+      callback();
+    }, 2000);
     timersRef.current.add(timer);
   };
 
@@ -70,14 +77,16 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
     <main className="share-screen" role="main">
       {/* Header */}
       <div style={{ textAlign: 'center' }}>
-        <div style={{
-          fontSize: '0.7rem',
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.15em',
-          color: 'var(--present)',
-          marginBottom: 8,
-        }}>
+        <div
+          style={{
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.15em',
+            color: 'var(--present)',
+            marginBottom: 8,
+          }}
+        >
           2-Player Mode
         </div>
         <h2 className="share-screen__title">Challenge Ready! 🎉</h2>
@@ -132,34 +141,42 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
         >
           {codeCopied ? '✓ Copied!' : '📋 Copy Code'}
         </button>
-        <p style={{
-          fontSize: '0.75rem',
-          color: 'var(--text-muted)',
-          marginTop: 8,
-          lineHeight: 1.4,
-        }}>
-        Player 2 can enter this 4-character code on the home screen instead of using the link.
+        <p
+          style={{
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
+            marginTop: 8,
+            lineHeight: 1.4,
+          }}
+        >
+          Player 2 can enter this 4-character code on the home screen instead of using the link.
         </p>
       </div>
 
       {/* Instructions */}
-      <div style={{
-        background: 'var(--bg-secondary)',
-        border: '1px solid var(--tile-border-empty)',
-        borderRadius: 8,
-        padding: '16px 20px',
-        width: '100%',
-        maxWidth: 360,
-        fontSize: '0.8125rem',
-        color: 'var(--text-muted)',
-        lineHeight: 1.5,
-      }}>
-        <strong style={{ color: 'var(--text)' }}>📱 Player 2 Instructions</strong><br/>
-        Open the link <em>or</em> go to the app and tap <em>"Enter Challenge Code"</em> on the home screen, then type the code above.
+      <div
+        style={{
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--tile-border-empty)',
+          borderRadius: 8,
+          padding: '16px 20px',
+          width: '100%',
+          maxWidth: 360,
+          fontSize: '0.8125rem',
+          color: 'var(--text-muted)',
+          lineHeight: 1.5,
+        }}
+      >
+        <strong style={{ color: 'var(--text)' }}>📱 Player 2 Instructions</strong>
+        <br />
+        Open the link <em>or</em> go to the app and tap <em>"Enter Challenge Code"</em> on the home
+        screen, then type the code above.
       </div>
 
       {/* Actions */}
-      <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div
+        style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 10 }}
+      >
         <button
           className="btn btn--outline btn--full"
           onClick={onBackToMenu}

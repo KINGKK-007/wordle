@@ -9,7 +9,6 @@ interface SetWordScreenProps {
   onToast: (msg: string) => void;
 }
 
-
 export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast }) => {
   const [word, setWord] = useState('');
   const [hidden, setHidden] = useState(true);
@@ -17,8 +16,16 @@ export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast
   const wordRef = useRef('');
   const submittedRef = useRef(false);
   const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const updateWord = (next: string) => { wordRef.current = next; setWord(next); };
-  useEffect(() => () => { if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current); }, []);
+  const updateWord = (next: string) => {
+    wordRef.current = next;
+    setWord(next);
+  };
+  useEffect(
+    () => () => {
+      if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+    },
+    [],
+  );
 
   const shake = useCallback(() => {
     setShaking(true);
@@ -26,33 +33,36 @@ export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast
     shakeTimerRef.current = setTimeout(() => setShaking(false), 650);
   }, []);
 
-  const handleKey = useCallback((key: string) => {
-    if (submittedRef.current) return;
-    const currentWord = wordRef.current;
-    if (key === 'Backspace') {
-      updateWord(currentWord.slice(0, -1));
-      return;
-    }
-    if (key === 'Enter') {
-      const lower = currentWord.toLowerCase();
-      if (lower.length < 5) {
-        onToast('Not enough letters');
-        shake();
+  const handleKey = useCallback(
+    (key: string) => {
+      if (submittedRef.current) return;
+      const currentWord = wordRef.current;
+      if (key === 'Backspace') {
+        updateWord(currentWord.slice(0, -1));
         return;
       }
-      if (!VALID_GUESS_SET.has(lower)) {
-        onToast('Not in word list');
-        shake();
+      if (key === 'Enter') {
+        const lower = currentWord.toLowerCase();
+        if (lower.length < 5) {
+          onToast('Not enough letters');
+          shake();
+          return;
+        }
+        if (!VALID_GUESS_SET.has(lower)) {
+          onToast('Not in word list');
+          shake();
+          return;
+        }
+        submittedRef.current = true;
+        onWordSet(lower);
         return;
       }
-      submittedRef.current = true;
-      onWordSet(lower);
-      return;
-    }
-    if (/^[A-Z]$/.test(key) && currentWord.length < 5) {
-      updateWord(currentWord + key);
-    }
-  }, [onWordSet, onToast, shake]);
+      if (/^[A-Z]$/.test(key) && currentWord.length < 5) {
+        updateWord(currentWord + key);
+      }
+    },
+    [onWordSet, onToast, shake],
+  );
 
   useKeyboardInput(handleKey);
 
@@ -85,37 +95,45 @@ export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast
         aria-label="Secret word input"
         role="group"
       >
-        {Array(5).fill(null).map((_, i) => {
-          const letter = word[i];
-          const isActive = i === word.length;
-          const isFilled = !!letter;
+        {Array(5)
+          .fill(null)
+          .map((_, i) => {
+            const letter = word[i];
+            const isActive = i === word.length;
+            const isFilled = !!letter;
 
-          return (
-            <div
-              key={i}
-              className={[
-                'set-word-tile',
-                isActive && word.length < 5 ? 'set-word-tile--active' : '',
-                isFilled ? 'set-word-tile--filled' : '',
-                isFilled && hidden ? 'set-word-tile--hidden' : '',
-              ].filter(Boolean).join(' ')}
-              aria-label={
-                isFilled
-                  ? hidden ? 'Hidden letter' : `Letter ${letter}`
-                  : isActive ? 'Current position' : 'Empty'
-              }
-            >
-              {isFilled && !hidden ? letter : isFilled && hidden ? '' : ''}
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={i}
+                className={[
+                  'set-word-tile',
+                  isActive && word.length < 5 ? 'set-word-tile--active' : '',
+                  isFilled ? 'set-word-tile--filled' : '',
+                  isFilled && hidden ? 'set-word-tile--hidden' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-label={
+                  isFilled
+                    ? hidden
+                      ? 'Hidden letter'
+                      : `Letter ${letter}`
+                    : isActive
+                      ? 'Current position'
+                      : 'Empty'
+                }
+              >
+                {isFilled && !hidden ? letter : isFilled && hidden ? '' : ''}
+              </div>
+            );
+          })}
       </div>
 
       {/* Controls */}
       <div className="set-word__controls">
         <button
           className="toggle-visibility"
-          onClick={() => setHidden(h => !h)}
+          onClick={() => setHidden((h) => !h)}
           aria-label={hidden ? 'Show word' : 'Hide word'}
           aria-pressed={!hidden}
         >
