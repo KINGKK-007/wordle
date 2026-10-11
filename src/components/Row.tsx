@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tile } from './Tile';
 import type { EvaluatedLetter, LetterState } from '../utils/evaluateGuess';
+import { SOLO_ANIMATION } from '../utils/revealTiming';
 
 interface RowProps {
   letters: string[];
@@ -12,6 +13,7 @@ interface RowProps {
   flipStaggerMs?: number;
   flipDurationMs?: number;
   bounceDurationMs?: number;
+  bounceStaggerMs?: number;
 }
 
 export const Row: React.FC<RowProps> = ({
@@ -21,9 +23,10 @@ export const Row: React.FC<RowProps> = ({
   isShaking = false,
   isFlipping = false,
   isBouncing = false,
-  flipStaggerMs = 300,
-  flipDurationMs = 500,
-  bounceDurationMs = 1000,
+  flipStaggerMs = SOLO_ANIMATION.staggerMs,
+  flipDurationMs = SOLO_ANIMATION.flipMs,
+  bounceDurationMs = SOLO_ANIMATION.bounceMs,
+  bounceStaggerMs = SOLO_ANIMATION.bounceStaggerMs,
 }) => {
   const tiles = Array(5)
     .fill(null)
@@ -64,7 +67,7 @@ export const Row: React.FC<RowProps> = ({
           flipDurationMs={flipDurationMs}
           bounceDurationMs={bounceDurationMs}
           isBouncing={isBouncing && !!evaluated}
-          bounceDelay={i * 100}
+          bounceDelay={i * bounceStaggerMs}
         />
       );
     });

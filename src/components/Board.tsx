@@ -1,6 +1,7 @@
 import React from 'react';
 import { Row } from './Row';
 import type { EvaluatedLetter } from '../utils/evaluateGuess';
+import { SOLO_ANIMATION } from '../utils/revealTiming';
 
 interface BoardProps {
   guesses: string[];
@@ -12,6 +13,7 @@ interface BoardProps {
   flipStaggerMs?: number;
   flipDurationMs?: number;
   bounceDurationMs?: number;
+  bounceStaggerMs?: number;
 }
 
 export const Board: React.FC<BoardProps> = ({
@@ -21,9 +23,10 @@ export const Board: React.FC<BoardProps> = ({
   shakingRow,
   flippingRow,
   bouncingRow,
-  flipStaggerMs = 300,
-  flipDurationMs = 500,
-  bounceDurationMs = 1000,
+  flipStaggerMs = SOLO_ANIMATION.staggerMs,
+  flipDurationMs = SOLO_ANIMATION.flipMs,
+  bounceDurationMs = SOLO_ANIMATION.bounceMs,
+  bounceStaggerMs = SOLO_ANIMATION.bounceStaggerMs,
 }) => {
   const rows = Array(6)
     .fill(null)
@@ -46,6 +49,7 @@ export const Board: React.FC<BoardProps> = ({
             flipStaggerMs={flipStaggerMs}
             flipDurationMs={flipDurationMs}
             bounceDurationMs={bounceDurationMs}
+            bounceStaggerMs={bounceStaggerMs}
           />
         );
       }

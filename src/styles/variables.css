@@ -52,7 +52,7 @@
 
   /* Timing */
   --flip-duration: 500ms;
-  --flip-stagger: 300ms;
+  --flip-stagger: 80ms;
   --shake-duration: 600ms;
   --pop-duration: 100ms;
   --bounce-duration: 1000ms;

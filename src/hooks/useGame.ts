@@ -5,11 +5,13 @@ import { recordWin, recordLoss } from '../utils/stats';
 import { getHardModeError } from '../utils/hardMode';
 import { createGameId, loadSavedGame, saveGame, type SoloMode } from '../utils/gamePersistence';
 import { removeStorage } from '../utils/storage';
+import { rowAnimationMs, SOLO_ANIMATION } from '../utils/revealTiming';
+import { useReducedMotion } from './useReducedMotion';
 
 export type GameStatus = 'playing' | 'evaluating' | 'won' | 'lost';
-export const SOLO_FLIP_DURATION_MS = 500;
-export const SOLO_FLIP_STAGGER_MS = 300;
-export const SOLO_FLIP_TOTAL_MS = 4 * SOLO_FLIP_STAGGER_MS + SOLO_FLIP_DURATION_MS;
+export const SOLO_FLIP_DURATION_MS = SOLO_ANIMATION.flipMs;
+export const SOLO_FLIP_STAGGER_MS = SOLO_ANIMATION.staggerMs;
+export const SOLO_FLIP_TOTAL_MS = rowAnimationMs(SOLO_FLIP_DURATION_MS, SOLO_FLIP_STAGGER_MS);
 
 export interface GameState {
   gameId: string;
@@ -84,6 +86,7 @@ function initialGame(answer: string, mode: SoloMode, persistKey?: string): GameS
 
 export function useGame(options: UseGameOptions): UseGameReturn {
   const { answer, mode, hardMode, persistKey } = options;
+  const reducedMotion = useReducedMotion();
   const [state, setState] = useState<GameState>(() => initialGame(answer, mode, persistKey));
   const stateRef = useRef(state);
   const callbacksRef = useRef(options);
@@ -211,28 +214,36 @@ export function useGame(options: UseGameOptions): UseGameReturn {
       if (won) recordWin(mode, guesses.length, current.gameId);
       else if (lost) recordLoss(mode, current.gameId);
 
-      later(() => {
-        const finished: GameState = {
-          ...stateRef.current,
-          status: won ? 'won' : lost ? 'lost' : 'playing',
-          flippingRow: null,
-          activeLetterStates: buildLetterStates(evaluatedRows),
-          bouncingRow: won ? rowIndex : null,
-        };
-        update(finished);
-        if (won) {
-          callbacksRef.current.onToast(WIN_MESSAGES[rowIndex], 2000);
-          later(() => {
-            update({ ...stateRef.current, bouncingRow: null });
+      later(
+        () => {
+          const finished: GameState = {
+            ...stateRef.current,
+            status: won ? 'won' : lost ? 'lost' : 'playing',
+            flippingRow: null,
+            activeLetterStates: buildLetterStates(evaluatedRows),
+            bouncingRow: won && !reducedMotion ? rowIndex : null,
+          };
+          update(finished);
+          if (won) {
+            callbacksRef.current.onToast(WIN_MESSAGES[rowIndex], 2000);
+            later(
+              () => {
+                update({ ...stateRef.current, bouncingRow: null });
+                notifyResult(finished);
+              },
+              reducedMotion
+                ? 0
+                : rowAnimationMs(SOLO_ANIMATION.bounceMs, SOLO_ANIMATION.bounceStaggerMs),
+            );
+          } else if (lost) {
+            callbacksRef.current.onToast(current.answer.toUpperCase(), 3000);
             notifyResult(finished);
-          }, 1400);
-        } else if (lost) {
-          callbacksRef.current.onToast(current.answer.toUpperCase(), 3000);
-          notifyResult(finished);
-        }
-      }, SOLO_FLIP_TOTAL_MS);
+          }
+        },
+        reducedMotion ? 0 : SOLO_FLIP_TOTAL_MS,
+      );
     },
-    [hardMode, later, mode, notifyResult, shakeRow, update],
+    [hardMode, later, mode, notifyResult, reducedMotion, shakeRow, update],
   );
 
   const resetGame = useCallback(

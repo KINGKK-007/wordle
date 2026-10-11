@@ -1,5 +1,6 @@
 import React from 'react';
 import type { LetterState } from '../utils/evaluateGuess';
+import { SOLO_ANIMATION } from '../utils/revealTiming';
 
 interface TileProps {
   letter?: string;
@@ -8,7 +9,7 @@ interface TileProps {
   /** Only relevant when isFlipping=true: the evaluated colour to reveal */
   flipColor?: 'correct' | 'present' | 'absent';
   isFlipping?: boolean;
-  /** Per-tile stagger in ms (0, 300, 600, 900, 1200) */
+  /** A regular offset between neighboring tiles. */
   flipDelay?: number;
   isBouncing?: boolean;
   bounceDelay?: number;
@@ -31,8 +32,8 @@ export const Tile: React.FC<TileProps> = ({
   flipDelay = 0,
   isBouncing = false,
   bounceDelay = 0,
-  flipDurationMs = 500,
-  bounceDurationMs = 1000,
+  flipDurationMs = SOLO_ANIMATION.flipMs,
+  bounceDurationMs = SOLO_ANIMATION.bounceMs,
 }) => {
   const tileClass = [
     'tile',
@@ -59,7 +60,7 @@ export const Tile: React.FC<TileProps> = ({
   const tileStyle: React.CSSProperties = {};
 
   if (isFlipping) {
-    // --tile-flip-color : resolved colour value used by flip-tile-color keyframe
+    // The same keyframe reveals the color and border while the tile is edge-on.
     // --flip-delay      : per-tile stagger so tiles flip one by one
     (tileStyle as Record<string, string>)['--tile-flip-color'] = flipColor
       ? FLIP_COLOR_VAR[flipColor]
@@ -68,7 +69,6 @@ export const Tile: React.FC<TileProps> = ({
     (tileStyle as Record<string, string>)['--tile-flip-text'] =
       `var(--${flipColor ?? 'absent'}-text)`;
     (tileStyle as Record<string, string>)['--flip-duration'] = `${flipDurationMs}ms`;
-    (tileStyle as Record<string, string>)['--flip-midpoint'] = `${flipDurationMs / 2}ms`;
   }
 
   if (isBouncing) {

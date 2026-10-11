@@ -40,73 +40,38 @@
   }
 }
 
-/* ── Tile flip reveal ─────────────────────────────────────────────────────────
- *
- * Exactly like NYT Wordle: each tile flips on its X-axis.
- *
- * Phase 1 – "flip in"  (0 → 250ms):  tile rotates from 0° → -90°
- *   The face disappears edge-on; the tile still shows its filled colour.
- *
- * Phase 2 – "flip out" (250 → 500ms): tile rotates from 90° → 0°
- *   The back face sweeps in; because the colour was applied during the
- *   invisible edge moment (50%) the user only ever sees it on the back face.
- *
- * Two separate keyframe animations are composed:
- *   flip-tile-rotate  — handles only the transform (perspective + rotateX)
- *   flip-tile-color   — a 1 ms "snap" that fires at the midpoint (+250 ms)
- *                        and switches the background from transparent → colour
- *
- * CSS custom properties set inline on each tile:
- *   --tile-flip-color   the target background (e.g. var(--correct))
- *   --flip-delay        per-tile stagger offset in ms  (0, 300, 600 …)
- * ─────────────────────────────────────────────────────────────────────────── */
-
-@keyframes flip-tile-rotate {
-  /* face → edge */
+/* Reveal every tile with one animation. Background, text and border switch
+   together at the invisible midpoint, so no second animation can trail the flip. */
+@keyframes tile-reveal {
   0% {
     transform: perspective(250px) rotateX(0deg);
-  }
-  50% {
-    transform: perspective(250px) rotateX(-90deg);
-  }
-  /* invisible at edge — jump to other side without being seen */
-  51% {
-    transform: perspective(250px) rotateX(90deg);
-  }
-  /* edge → back face */
-  100% {
-    transform: perspective(250px) rotateX(0deg);
-  }
-}
-
-@keyframes flip-tile-color {
-  from {
     background-color: transparent;
     border-color: var(--tile-border-filled);
     color: var(--text);
   }
-  to {
+  49.999% {
+    transform: perspective(250px) rotateX(-90deg);
+    background-color: transparent;
+    border-color: var(--tile-border-filled);
+    color: var(--text);
+  }
+  50% {
+    transform: perspective(250px) rotateX(90deg);
+    background-color: var(--tile-flip-color);
+    border-color: var(--tile-flip-color);
+    color: var(--tile-flip-text, white);
+  }
+  100% {
+    transform: perspective(250px) rotateX(0deg);
     background-color: var(--tile-flip-color);
     border-color: var(--tile-flip-color);
     color: var(--tile-flip-text, white);
   }
 }
 
-/*
- * .tile--flipping is applied by React when a row is being evaluated.
- * --flip-delay and --tile-flip-color are set as inline styles.
- *
- * flip-tile-color uses "step-end" so it holds the FROM values (transparent)
- * for its entire 1 ms window and only snaps to TO (colour) at the very end.
- * Combined with fill-mode:both it means:
- *   - before midpoint  → tile is transparent (filled look)
- *   - at midpoint+1ms  → tile snaps to evaluated colour
- *   - held thereafter  → tile stays coloured
- */
 .tile--flipping {
-  animation:
-    flip-tile-rotate var(--flip-duration, 500ms) var(--flip-delay, 0ms) ease-in-out both,
-    flip-tile-color 1ms calc(var(--flip-delay, 0ms) + var(--flip-midpoint, 250ms)) step-end both;
+  animation: tile-reveal var(--flip-duration, 500ms) var(--flip-delay, 0ms) ease-in-out both;
+  will-change: transform;
 }
 
 /* ── Win bounce ──────────────────────────────────────────────────────────── */
