@@ -6,7 +6,7 @@ import { DuelStatsPanel } from '../duel/DuelStats';
 import './statsTabs.css';
 
 type StatsMode = 'unlimited' | '2player' | 'duel';
-const modes: StatsMode[] = ['unlimited', '2player', 'duel'];
+const modes: StatsMode[] = ['duel', '2player', 'unlimited'];
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -68,7 +68,7 @@ export function StatsModal({
               document.getElementById(`${id}-${next}`)?.focus();
             }}
           >
-            {value === 'unlimited' ? 'Unlimited' : value === '2player' ? '2-Player' : 'Duel'}
+            {value === 'duel' ? 'Live Duel' : value === '2player' ? 'Secret Word' : 'Unlimited'}
           </button>
         ))}
       </div>
@@ -127,6 +127,7 @@ export function StatsModal({
           )
         )}
       </div>
+      <p className="stats-local-note">Saved in this browser on this device.</p>
 
       {/* Actions for game-over states */}
       {isGameOver && tab === mode && (
@@ -150,7 +151,7 @@ export function StatsModal({
                 onSetNewWord();
               }}
             >
-              Set a New Word
+              Create a word
             </button>
           )}
         </div>

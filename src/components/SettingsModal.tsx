@@ -30,7 +30,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="setting-row__label">Hard Mode</div>
           <div className="setting-row__desc">
             {duelMode
-              ? 'Hard Mode is off in Duel. Both players use the same rules.'
+              ? 'Hard Mode is off in Live Duel. Both players use the same rules.'
               : hasStarted
                 ? 'Cannot change during a game'
                 : 'Any revealed hints must be used in subsequent guesses'}
@@ -68,22 +68,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </label>
       </div>
 
-      <div className="setting-row">
-        <div className="setting-row__info">
-          <div className="setting-row__label">Dark Theme</div>
-          <div className="setting-row__desc">Dark theme is always active</div>
-        </div>
-        <label className="toggle" aria-label="Dark theme (always on)">
-          <input type="checkbox" checked={true} readOnly />
-          <div className="toggle__track">
-            <div className="toggle__thumb" />
-          </div>
-        </label>
-      </div>
-
       <div style={{ paddingTop: 20, borderTop: '1px solid var(--header-border)', marginTop: 8 }}>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          Custom Wordle — A fan-made Wordle clone
+          Custom Wordle · Five letters. Better together.
         </p>
       </div>
     </Modal>

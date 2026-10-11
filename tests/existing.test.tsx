@@ -8,6 +8,11 @@ import { useToast } from '../src/hooks/useToast';
 import { Key } from '../src/components/Key';
 import { Modal } from '../src/components/Modal';
 import { SetWordScreen } from '../src/components/SetWordScreen';
+import { ShareLinkScreen } from '../src/components/ShareLinkScreen';
+import { StatsModal } from '../src/components/StatsModal';
+import { ResultModal } from '../src/components/ResultModal';
+import { HelpModal } from '../src/components/HelpModal';
+import { SettingsModal } from '../src/components/SettingsModal';
 import { ToastContainer } from '../src/components/Toast';
 import { GameScreen } from '../src/components/GameScreen';
 import { loadStats, recordWin, recordLoss, saveStats } from '../src/utils/stats';
@@ -442,5 +447,131 @@ describe('input, modals and transient UI regression cases', () => {
     });
     expect(await copyToClipboard('hello')).toBe(false);
     expect(document.querySelector('textarea')).toBeNull();
+  });
+});
+
+describe('friend challenge product flow', () => {
+  it('keeps the setter hidden and returns to the Secret Word hub without submitting', () => {
+    const onBack = vi.fn();
+    const onWordSet = vi.fn();
+    render(<SetWordScreen onWordSet={onWordSet} onToast={vi.fn()} onBack={onBack} />);
+    for (const key of 'CRANE') fireEvent.keyDown(window, { key });
+    expect(screen.getAllByLabelText('Hidden letter')).toHaveLength(5);
+    fireEvent.click(screen.getByRole('button', { name: 'Show word' }));
+    expect(screen.getByLabelText('Letter C')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '← Secret Word' }));
+    expect(onBack).toHaveBeenCalledOnce();
+    expect(onWordSet).not.toHaveBeenCalled();
+  });
+
+  it('shows a complete challenge link, accurate mode instructions and a repeat invitation action', () => {
+    const onCreateAnother = vi.fn();
+    render(
+      <ShareLinkScreen
+        word="crane"
+        onToast={vi.fn()}
+        onBackToMenu={vi.fn()}
+        onCreateAnother={onCreateAnother}
+      />,
+    );
+    const link = screen.getByLabelText('Challenge URL').textContent!;
+    expect(link).toContain('#/play?w=');
+    expect(link).not.toContain('…');
+    expect(link).not.toContain('crane');
+    expect(screen.getByText('Secret Word → Enter challenge code')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Create another word' }));
+    expect(onCreateAnother).toHaveBeenCalledOnce();
+  });
+
+  it('lets a player cancel native invitation sharing without copying or an error toast', async () => {
+    const originalShare = navigator.share;
+    const share = vi.fn().mockRejectedValue(new DOMException('Cancelled', 'AbortError'));
+    Object.defineProperty(navigator, 'share', { configurable: true, value: share });
+    const copy = vi.fn(() => true);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: copy });
+    const onToast = vi.fn();
+    try {
+      render(<ShareLinkScreen word="crane" onToast={onToast} onBackToMenu={vi.fn()} />);
+      await act(async () =>
+        fireEvent.click(screen.getByRole('button', { name: 'Share challenge' })),
+      );
+      expect(share).toHaveBeenCalledOnce();
+      expect(share.mock.calls[0][0]).toMatchObject({
+        title: 'Custom Wordle · Secret Word',
+        url: expect.stringContaining('#/play?w='),
+      });
+      expect(copy).not.toHaveBeenCalled();
+      expect(onToast).not.toHaveBeenCalled();
+    } finally {
+      if (originalShare)
+        Object.defineProperty(navigator, 'share', { configurable: true, value: originalShare });
+      else Reflect.deleteProperty(navigator, 'share');
+    }
+  });
+
+  it('orders statistics consistently and describes where progress is saved', () => {
+    render(<StatsModal isOpen onClose={vi.fn()} mode="duel" />);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'Live Duel',
+      'Secret Word',
+      'Unlimited',
+    ]);
+    expect(screen.getByRole('tab', { name: 'Live Duel' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Saved in this browser on this device.')).toBeVisible();
+  });
+
+  it('explains all modes and exposes only settings that can change', () => {
+    const help = render(<HelpModal isOpen onClose={vi.fn()} />);
+    expect(screen.getByText('Live Duel:')).toBeVisible();
+    expect(screen.getByText('Secret Word:')).toBeVisible();
+    expect(screen.getByText('Unlimited:')).toBeVisible();
+    help.unmount();
+    render(
+      <SettingsModal
+        isOpen
+        onClose={vi.fn()}
+        settings={{ hardMode: false, highContrast: false }}
+        onToggle={vi.fn()}
+        hasStarted={false}
+      />,
+    );
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.queryByText('Dark Theme')).toBeNull();
+  });
+
+  it('shares a spoiler-free result natively and allows returning a word to the friend', async () => {
+    const originalShare = navigator.share;
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', { configurable: true, value: share });
+    const onSetNewWord = vi.fn();
+    const onShowToast = vi.fn();
+    try {
+      render(
+        <ResultModal
+          isOpen
+          onClose={vi.fn()}
+          status="won"
+          answer="crane"
+          guessCount={1}
+          evaluatedRows={[evaluateGuess('crane', 'crane')]}
+          mode="2player"
+          highContrast={false}
+          onSetNewWord={onSetNewWord}
+          onBackToMenu={vi.fn()}
+          onShowToast={onShowToast}
+        />,
+      );
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Share Result' })));
+      expect(share).toHaveBeenCalledOnce();
+      expect(share.mock.calls[0][0].text).toContain('🟩🟩🟩🟩🟩');
+      expect(share.mock.calls[0][0].text.toLowerCase()).not.toContain('crane');
+      expect(onShowToast).toHaveBeenCalledWith('Result shared!');
+      fireEvent.click(screen.getByRole('button', { name: 'Create a word' }));
+      expect(onSetNewWord).toHaveBeenCalledOnce();
+    } finally {
+      if (originalShare)
+        Object.defineProperty(navigator, 'share', { configurable: true, value: originalShare });
+      else Reflect.deleteProperty(navigator, 'share');
+    }
   });
 });

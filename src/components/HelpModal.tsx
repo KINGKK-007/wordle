@@ -11,7 +11,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     <Modal isOpen={isOpen} onClose={onClose} title="How To Play" aria-label="How To Play">
       <div className="modal__section">
         <p className="help-text">
-          Guess the <strong>Wordle</strong> in 6 tries.
+          Guess a <strong>five-letter word</strong> in six tries.
         </p>
         <ul className="help-text" style={{ paddingLeft: '1.25em', marginBottom: 0 }}>
           <li>Each guess must be a valid 5-letter word.</li>
@@ -68,13 +68,18 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
       <div className="modal__section">
         <p className="help-text">
-          <strong>Unlimited Mode:</strong> Play as many games as you want. A new random word every
-          time you click "Play Again".
+          <strong>Live Duel:</strong> Invite a friend and race the same words for 1, 2, or 5
+          minutes. Both players tap Ready before the countdown. Solve the most words to win; you can
+          see your friend's colors, but never their letters.
         </p>
         <p className="help-text">
-          <strong>2-Player Mode:</strong> Player 1 sets a secret 5-letter word and shares a link or
-          challenge code. Player 2 opens the link and guesses the word — standard Wordle rules
-          apply.
+          <strong>Secret Word:</strong> Create a word for a friend, or enter their four-character
+          challenge code inside Secret Word. Shared puzzles have six guesses and no timer, so
+          friends can play anytime.
+        </p>
+        <p className="help-text">
+          <strong>Unlimited:</strong> Practice at your pace with a new random word after every game.
+          Your current board and statistics are saved in this browser.
         </p>
       </div>
     </Modal>

@@ -50,10 +50,12 @@ export const CodeInputScreen: React.FC<CodeInputScreenProps> = ({ onCodeEntered,
             marginBottom: 8,
           }}
         >
-          2-Player Mode
+          Secret Word
         </div>
         <h2 className="code-input-screen__title">Enter Challenge Code</h2>
-        <p className="code-input-screen__desc">Type the 4-character code shared by Player 1</p>
+        <p className="code-input-screen__desc">
+          Enter your friend's four-character challenge code.
+        </p>
       </div>
 
       <input
@@ -108,10 +110,10 @@ export const CodeInputScreen: React.FC<CodeInputScreenProps> = ({ onCodeEntered,
           disabled={code.length < 4}
           id="submit-code-btn"
         >
-          Start Game →
+          Solve their word →
         </button>
         <button className="btn btn--outline btn--full" onClick={onCancel} id="cancel-code-btn">
-          ← Back
+          ← Secret Word
         </button>
       </div>
     </main>

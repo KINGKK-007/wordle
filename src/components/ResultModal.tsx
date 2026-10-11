@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EvaluatedLetter } from '../utils/evaluateGuess';
-import { generateShareText, copyToClipboard } from '../utils/shareResult';
+import { generateShareText, shareOrCopy } from '../utils/shareResult';
 import { Modal } from './Modal';
 
 interface ResultModalProps {
@@ -37,12 +37,11 @@ export const ResultModal: React.FC<ResultModalProps> = ({
   const handleShare = async () => {
     const count = status === 'won' ? guessCount : 'X';
     const text = generateShareText(evaluatedRows, count, mode, highContrast);
-    const ok = await copyToClipboard(text);
-    if (ok) {
+    const outcome = await shareOrCopy(text, 'Custom Wordle');
+    if (outcome === 'copied') {
       onShowToast('Copied results to clipboard!');
-    } else {
-      onShowToast('Unable to copy to clipboard');
-    }
+    } else if (outcome === 'shared') onShowToast('Result shared!');
+    else if (outcome === 'failed') onShowToast('Unable to share. Please try again.');
   };
 
   return (
@@ -111,7 +110,7 @@ export const ResultModal: React.FC<ResultModalProps> = ({
               onSetNewWord();
             }}
           >
-            Set a New Word
+            Create a word
           </button>
         )}
 

@@ -24,6 +24,12 @@
   outline: 2px solid var(--text);
   outline-offset: -2px;
 }
+.stats-local-note {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 16px 0 0;
+}
 .duel-stats-numbers {
   gap: 8px;
   flex-wrap: wrap;

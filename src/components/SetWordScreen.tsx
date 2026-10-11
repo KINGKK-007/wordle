@@ -7,9 +7,10 @@ import type { LetterState } from '../utils/evaluateGuess';
 interface SetWordScreenProps {
   onWordSet: (word: string) => void;
   onToast: (msg: string) => void;
+  onBack?: () => void;
 }
 
-export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast }) => {
+export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast, onBack }) => {
   const [word, setWord] = useState('');
   const [hidden, setHidden] = useState(true);
   const [shaking, setShaking] = useState(false);
@@ -81,11 +82,11 @@ export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast
             marginBottom: 8,
           }}
         >
-          2-Player Mode
+          Secret Word
         </div>
-        <h2 className="set-word-screen__title">Player 1: Set a Secret Word</h2>
+        <h2 className="set-word-screen__title">Create a secret word</h2>
         <p className="set-word-screen__subtitle">
-          Type a 5-letter word, then generate a challenge link for Player 2
+          Choose a valid five-letter word. Your friend gets six guesses and can play anytime.
         </p>
       </div>
 
@@ -137,7 +138,7 @@ export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast
           aria-label={hidden ? 'Show word' : 'Hide word'}
           aria-pressed={!hidden}
         >
-          {hidden ? '👁 Show Word' : '🙈 Hide Word'}
+          {hidden ? 'Show word' : 'Hide word'}
         </button>
       </div>
 
@@ -152,8 +153,13 @@ export const SetWordScreen: React.FC<SetWordScreenProps> = ({ onWordSet, onToast
         id="generate-challenge-btn"
         style={{ marginBottom: 16, minWidth: 220 }}
       >
-        Generate Challenge Link →
+        Create challenge →
       </button>
+      {onBack && (
+        <button className="btn btn--outline btn--sm" onClick={onBack}>
+          ← Secret Word
+        </button>
+      )}
     </main>
   );
 };

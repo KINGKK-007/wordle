@@ -75,7 +75,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     return () => window.removeEventListener('header-action', handler);
   }, [refreshStats]);
   const closeModal = () => setOpenModal(null);
-  const modeLabel = mode === 'unlimited' ? 'Unlimited Mode' : 'Challenge from Player 1';
+  const modeLabel =
+    mode === 'unlimited'
+      ? 'Unlimited · Play at your pace'
+      : 'Secret Word · A puzzle from your friend';
   return (
     <>
       <div className="game-mode-label" aria-label={modeLabel}>

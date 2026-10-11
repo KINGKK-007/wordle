@@ -6,12 +6,14 @@ interface ShareLinkScreenProps {
   word: string;
   onToast: (msg: string) => void;
   onBackToMenu: () => void;
+  onCreateAnother?: () => void;
 }
 
 export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
   word,
   onToast,
   onBackToMenu,
+  onCreateAnother,
 }) => {
   const url = buildChallengeUrl(word);
   const code = encodeToCode(word);
@@ -60,13 +62,19 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Custom Wordle Challenge',
-          text: `Guess my Wordle! Code: ${code}`,
+          title: 'Custom Wordle · Secret Word',
+          text: `I picked a five-letter word for you. Can you solve it in six guesses? Challenge code: ${code}`,
           url,
         });
         return;
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
+        if (
+          error !== null &&
+          typeof error === 'object' &&
+          'name' in error &&
+          error.name === 'AbortError'
+        )
+          return;
         // fall through to copy
       }
     }
@@ -87,38 +95,38 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
             marginBottom: 8,
           }}
         >
-          2-Player Mode
+          Secret Word
         </div>
-        <h2 className="share-screen__title">Challenge Ready! 🎉</h2>
+        <h2 className="share-screen__title">Your puzzle is ready</h2>
         <p className="share-screen__subtitle">
-          Share the link or challenge code with Player 2. The word is hidden in the link.
+          Send it to a friend. They can solve it whenever they like, even after you leave.
         </p>
       </div>
 
       {/* Challenge Link block */}
       <div className="share-block">
         <div className="share-block__label">Challenge Link</div>
-        <div className="share-block__url" aria-label="Challenge URL">
-          {url.length > 60 ? url.slice(0, 57) + '…' : url}
+        <div className="share-block__url" aria-label="Challenge URL" style={{ userSelect: 'text' }}>
+          {url}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            className="btn btn--primary btn--sm"
+            className="btn btn--secondary btn--sm"
             onClick={handleCopyUrl}
             id="copy-link-btn"
             aria-label="Copy challenge link"
             style={{ flex: 1 }}
           >
-            {urlCopied ? '✓ Copied!' : '📋 Copy Link'}
+            {urlCopied ? '✓ Copied!' : 'Copy link'}
           </button>
           <button
-            className="btn btn--secondary btn--sm"
+            className="btn btn--primary btn--sm"
             onClick={handleShare}
             id="share-link-btn"
             aria-label="Share challenge"
             style={{ flex: 1 }}
           >
-            🔗 Share
+            Share puzzle
           </button>
         </div>
       </div>
@@ -129,7 +137,7 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
         <div
           className="share-block__code"
           aria-label={`Challenge code: ${code}`}
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: 12, userSelect: 'text' }}
         >
           {code}
         </div>
@@ -139,7 +147,7 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
           id="copy-code-btn"
           aria-label="Copy challenge code"
         >
-          {codeCopied ? '✓ Copied!' : '📋 Copy Code'}
+          {codeCopied ? '✓ Copied!' : 'Copy code'}
         </button>
         <p
           style={{
@@ -149,7 +157,7 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
             lineHeight: 1.4,
           }}
         >
-          Player 2 can enter this 4-character code on the home screen instead of using the link.
+          This four-character code is for Secret Word. Live Duel uses a separate room code.
         </p>
       </div>
 
@@ -167,16 +175,21 @@ export const ShareLinkScreen: React.FC<ShareLinkScreenProps> = ({
           lineHeight: 1.5,
         }}
       >
-        <strong style={{ color: 'var(--text)' }}>📱 Player 2 Instructions</strong>
+        <strong style={{ color: 'var(--text)' }}>How your friend plays</strong>
         <br />
-        Open the link <em>or</em> go to the app and tap <em>"Enter Challenge Code"</em> on the home
-        screen, then type the code above.
+        Open your link, or choose <strong>Secret Word → Enter challenge code</strong> and enter the
+        code above. Five letters, six guesses, no timer.
       </div>
 
       {/* Actions */}
       <div
         style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 10 }}
       >
+        {onCreateAnother && (
+          <button className="btn btn--secondary btn--full" onClick={onCreateAnother}>
+            Create another word
+          </button>
+        )}
         <button
           className="btn btn--outline btn--full"
           onClick={onBackToMenu}
